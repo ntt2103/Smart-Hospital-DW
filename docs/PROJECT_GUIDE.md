@@ -1,5 +1,23 @@
 # Smart Hospital Data Warehouse — tài liệu tổng thể
 
+## Lộ trình đọc cho người mới và mốc phiên bản
+
+Dự án giải quyết việc tổng hợp lịch hẹn, khám bệnh, nội trú/giường và xét nghiệm thành các chỉ số có cùng cách hiểu. Có hai đường xử lý: batch xây lịch sử từ dữ liệu giao dịch; Kafka và near-RT phản ánh một số hoạt động trong 15 phút vừa qua. Form là đầu vào nghiệp vụ, không phải công cụ ghi trực tiếp vào KPI.
+
+| Thứ tự | Tài liệu | Câu hỏi người đọc cần trả lời |
+|---|---|---|
+| 1 | [Phase 0](PHASE_0_FINAL.md) | Vì sao cần DW, ai dùng kết quả, 11 KPI đo điều gì? |
+| 2 | [Phase 1](PHASE_1_FINAL.md) | Dữ liệu nguồn có quan hệ gì; một dòng fact đếm gì; quy tắc thời gian ra sao? |
+| 3 | [Phase 2](PHASE_2_FINAL.md) | Nguồn mô phỏng, database, roles và staging được dựng thế nào? |
+| 4 | [Phase 3](PHASE_3_FINAL.md) | Batch biến nguồn thành fact/mart và 9 KPI lịch sử bằng cách nào? |
+| 5 | [Phase 4](PHASE_4_FINAL.md) | Kafka, cửa sổ RT và form đầu tiên bổ sung gì cho batch? |
+| 6 | [Phase 5](PHASE_5_FINAL.md) | Vì sao đổi sang 5 fact/7 dimension/2 bridge; dữ liệu lớn được kiểm chứng ra sao; form và startup mới hoạt động thế nào? |
+| Thực hành | [README](../README.md), [tiếp nhận](BOOKING_RECEPTION.md), [kiểm chứng](VALIDATION.md) | Chạy bản hiện tại, demo nghiệp vụ và đánh giá bằng chứng ở đâu? |
+
+Các phase là lịch sử phát triển, không phải sáu cấu hình đang chạy đồng thời. Số fact/dimension, quy mô seed, form, cổng và lệnh cũ trong một phase chỉ đúng ở mốc đó. Mô hình hiện hành là 13 bảng nguồn phân tích, 5 fact vật lý, 7 dimension, 2 bridge, 11 KPI và 4 dashboard. Hai bảng hỗ trợ đăng ký/outbox nằm ngoài tập 13 nguồn phân tích.
+
+Nghiệm thu Phase 5 ngày 03/11 và cập nhật form ngày 05/11/tái cấu trúc ngày 06/11 là các mốc riêng. Phần 9–12 cuối Phase 5 nối rõ thiết kế cũ với mới, mô tả đăng ký/check-in/NO_SHOW 30 phút/outbox và đường đi tới dashboard. Không dùng benchmark hoặc kiểm thử cũ để khẳng định một cập nhật mới đã được đo lại toàn bộ. Các phần bên dưới giữ chi tiết và số liệu theo mốc được ghi tại từng mục; README là nguồn hướng dẫn khởi động hiện hành.
+
 > Cập nhật cấu trúc ngày 06/11/2026: chạy `docker compose up --build` từ thư mục gốc theo [README](../README.md). Các lệnh `scripts/` và snapshot runtime trong nội dung lịch sử bên dưới đã được thay bằng Compose gốc; module Python bảo trì chuyển sang `src/operations/`.
 
 **Cập nhật triển khai ngày 03/11/2026, giờ Việt Nam.** Đọc tuần tự để hiểu từ nhu cầu nghiệp vụ đến dữ liệu, xử lý, kết quả và cách vận hành. Evidence Phase 5 ở artifacts/phase5; số đo Phase 2–4 thuộc bộ demo cũ và không dùng làm benchmark cho bộ mới.

@@ -1,5 +1,11 @@
 # Phase 5 — Báo cáo triển khai và nghiệm thu
 
+## Cách đọc báo cáo này
+
+Phase 5 nối tiếp [Phase 4](PHASE_4_FINAL.md), hoàn thiện mô hình phân tích và kiểm chứng trên bộ dữ liệu lớn hơn. Mục 1–8 ghi nhận nghiệm thu ngày 03/11/2026; mục 9–12 bổ sung bản đồ thay đổi thiết kế và các cập nhật thực hiện ngày 05–06/11. Vì vậy, nhận định “chưa có outbox”, form cũ, scripts hoặc snapshot trong mục 1–8 chỉ mô tả mốc nghiệm thu đó, không phải toàn bộ trạng thái hiện hành.
+
+Người mới nên đọc phần nghiệp vụ và grain trước, sau đó xem mục 9 về chuyển thiết kế, mục 10 về form mới, mục 11 về khởi động và mục 12 về đường đi dữ liệu. Cách chạy hiện hành ở [README](../README.md); sơ đồ tích hợp và lộ trình đọc ở [PROJECT_GUIDE](PROJECT_GUIDE.md). Các file raw evidence được dẫn trong nội dung lịch sử giữ local, bản tổng hợp công khai ở [VALIDATION](VALIDATION.md).
+
 Ngày lập báo cáo: **03/11/2026**, giờ Việt Nam. Đây là kết quả triển khai Phase 5, với yêu cầu của người dùng thay thế chỉ tiêu tròn 5 triệu dòng: **trung bình 6.000 lượt khám/ngày trong 180 ngày**. “Lượt khám” được hiểu là tổng OP + IP; không cộng lab order, quan hệ, bản sao raw/stg/DW hoặc Kafka vào số lượt khám.
 
 **Trạng thái: hoàn tất Phase 5 trong phạm vi nghiệm thu dưới đây.** Mô hình, dữ liệu, đối soát, benchmark, form/dashboard, hai DAG thực tế và restore toàn bộ database Phase 5 đều đã có bằng chứng đạt. Các giới hạn về production, browser rendering và historical doctor coverage được công bố riêng.
@@ -285,3 +291,91 @@ Cập nhật snapshot code có chủ đích bằng `./scripts/phase5_prepare.ps1
 Không đưa vào nghiệm thu đợt này: CDC/outbox, drill-across mới, care episode/tái khám linkage, giao diện lâm sàng hoàn chỉnh, phục vụ production, benchmark throughput dài hạn, một phép đo scheduled end-to-end latency mới cho bộ Phase 5, hoặc historical doctor profile coverage không tồn tại ở nguồn. Browser rendering vẫn là phần chưa kiểm chứng; các kết quả dashboard ở đây là SQL/API.
 
 Báo cáo này thay thế các chỉ tiêu volume dự kiến trong kế hoạch ở đúng phạm vi người dùng đã điều chỉnh. Evidence JSON ghi nhận từng mốc là lịch sử thực thi, có thể còn mô tả “pending” ở thời điểm nó được tạo; trạng thái nghiệm thu cuối dựa trên gate tổng hợp cùng kết quả recovery sau cùng.
+
+
+## 9. Từ thiết kế ban đầu đến mô hình DW hiện hành
+
+### 9.1 Vì sao cần thay đổi
+
+Phase 0 chốt câu hỏi nghiệp vụ và KPI; Phase 1 thiết kế dữ liệu; Phase 2 dựng nền và nguồn; Phase 3 triển khai lịch sử; Phase 4 bổ sung sự kiện và form. Khi mở rộng ở Phase 5, mô hình cần biểu diễn lượt khám thống nhất và các quan hệ nhiều bác sĩ/nhiều chẩn đoán, đồng thời tách rõ dữ liệu phân tích nghiệp vụ với nhật ký sự kiện. Việc sửa thiết kế không làm thay đổi ý nghĩa “một lượt khám” thành số event hoặc số dòng join.
+
+| Thành phần | Thiết kế/triển khai Phase 0–4 | Phase 5 hiện hành |
+|---|---|---|
+| Tập nguồn phân tích | 10 bảng nghiệp vụ lõi | 13 bảng: thêm diagnoses, encounter_doctors, encounter_diagnoses |
+| Mô hình | Nhiều fact nghiệp vụ và operational event fact; 6 dimension | Fact constellation ROLAP; 5 fact vật lý, 7 dimension, 2 bridge |
+| Lượt ngoại trú/nội trú | fact_outpatient_encounter và fact_inpatient_encounter | Gộp fact_encounter, phân biệt encounter_type và eligibility/date role |
+| Event vận hành | fact_operational_event | Loại fact này; canonical raw.events phục vụ tính RT, event_deliveries lưu audit delivery |
+| Chẩn đoán | Chưa có dimension riêng trong bộ thiết kế đầu | dim_diagnosis và bridge_encounter_diagnosis |
+| Bác sĩ phối hợp | Chưa có bridge đa trị của bản cuối | bridge_encounter_doctor, tách khỏi bác sĩ chính và khoa sở hữu encounter |
+| Thước đo nghiệp vụ | 11 KPI mục tiêu; 9 lịch sử và 2 RT triển khai qua các phase | Giữ 11 KPI, đối soát đúng grain, mẫu số và vai trò ngày |
+| Quy mô seed | Bộ demo ban đầu 151.433 dòng/10 bảng, thiết kế horizon 12 tháng | 1.080.000 encounter/180 ngày, tổng 7.931.367 dòng/13 bảng |
+
+### 9.2 Cách đọc mô hình mới
+
+Năm fact trả lời năm câu hỏi riêng: đã có lịch hẹn gì; đã có lượt khám/đợt điều trị nào; có chỉ định xét nghiệm nào; giường đã được cấp trong khoảng nào; trạng thái sử dụng từng giường tại snapshot ngày ra sao. Chúng dùng chung các chiều ngày, bệnh nhân, khoa, bác sĩ, giường, loại xét nghiệm và chẩn đoán theo quan hệ phù hợp, không phải mọi fact đều nối mọi chiều.
+
+Hai bridge bổ sung quan hệ đa trị. Một encounter có hai bác sĩ và ba chẩn đoán vẫn là một encounter; lọc kết hợp dùng EXISTS/semi-join để không đếm thành sáu lượt. Doctor SCD2 chỉ có lịch sử quan sát được; thiếu coverage phải dùng unknown key, không lấy profile hiện tại gán ngược cho toàn bộ seed.
+
+Việc gộp OP/IP không gộp các mốc ngày: OP visits và waiting theo bắt đầu khám; admission theo nhập viện; LOS theo xuất viện. Các tên OP/IP cũ còn là compatibility views, không tính là hai fact vật lý bổ sung. Mô hình cuối xem ở [sơ đồ DW](diagrams/dw_star_schema.mmd), [migration 007](../sql/migrations/007_phase5_warehouse.sql) và [canonical RT migration 009](../sql/migrations/009_phase5_canonical_rt.sql).
+
+## 10. Cập nhật đăng ký và tiếp nhận ngày 05/11/2026
+
+Phần này bổ sung sau nghiệm thu 03/11; không thay thế các số benchmark hay biến các kiểm thử form cũ thành kiểm thử form mới.
+
+### 10.1 Form và hồ sơ đăng ký
+
+Form tại localhost:28081 hiện đi theo thứ tự họ tên → mục đích khám → chuyên khoa → bác sĩ → ngày giờ → xem lại → xác nhận. Tái khám cần mã bệnh nhân đang hoạt động; các mục đích còn lại đi theo luồng đăng ký lần đầu. Mỗi đăng ký tạo appointment SCHEDULED ngay. Với người mới, hệ thống tạo patient tạm mã TMP nội bộ, chỉ cấp mã BN chính thức khi check-in. Tên và mục đích khám lưu trong booking_registrations, liên kết với patient/appointment; chưa trở thành thuộc tính phân tích trong DW hoặc dashboard.
+
+Giờ hẹn phải cách lúc đặt ít nhất 30 phút và không quá 365 ngày. Giao diện chính hiện thông tin đăng ký và trạng thái tiếp nhận, không còn chuỗi Source saved/Broker ACK/Raw received/Warehouse received của form cũ. API booking cũ vẫn tồn tại, nhưng form mới dùng `/api/registrations`.
+
+### 10.2 Check-in và vắng hẹn
+
+Quầy demo tiếp nhận từ 30 phút trước đến 30 phút sau giờ hẹn. Check-in hợp lệ cấp mã BN cho người mới, chuyển appointment SCHEDULED → ATTENDED và tạo encounter OUTPATIENT/CHECKED_IN trong cùng transaction. Retry không tạo thêm patient hoặc encounter. Việc check-in chưa đồng nghĩa đã bắt đầu khám.
+
+Worker tự chuyển các lịch thuộc booking_registrations, còn SCHEDULED, chưa có encounter và đã quá giờ hẹn hơn 30 phút sang NO_SHOW. Nó không tự phân loại lại toàn bộ seed; không tạo encounter hay cấp mã BN cho người vắng mặt. DQ nguồn, projection batch và CHECK của fact dùng ngưỡng 30 phút qua migration 014. Batch vẫn phải chạy để đưa trạng thái mới vào fact/mart và KPI OP03.
+
+### 10.3 Transactional outbox và phạm vi kiến trúc
+
+Luồng đăng ký/check-in mới ghi nghiệp vụ và sự kiện vào `booking_event_outbox` trong cùng transaction PostgreSQL; worker gửi Kafka và đánh dấu sau broker ACK. Producer mô phỏng và API booking cũ vẫn có SQLite journal. Do đó bản hiện hành có outbox cho tiếp nhận, nhưng chưa có CDC tổng quát cho mọi thay đổi nguồn.
+
+Hai bảng booking_registrations và booking_event_outbox là bảng hỗ trợ OLTP, không tự tăng tập 13 bảng trích xuất phân tích thành 15 bảng fact/dimension. Hợp đồng sự kiện dùng `event_type=created` trên topic appointments.events cho lịch mới; `booking.created` trong phần lịch sử là cách diễn giải, không phải enum chính thức.
+
+### 10.4 Tác động đến KPI và bằng chứng bổ sung
+
+| Hành động | Dữ liệu và chỉ số |
+|---|---|
+| Xác nhận đăng ký | Tạo lịch SCHEDULED; chưa tăng OP01, RT01 hoặc RT02 |
+| Check-in | Tạo encounter và event checked_in; RT01 có thể tăng sau consumer và refresh nếu event còn trong cửa sổ |
+| Bắt đầu khám | OP01 có thể tăng sau batch; form tiếp nhận chưa có thao tác này |
+| Hoàn thành xét nghiệm | RT02 có thể tăng sau nhận event và refresh; cần luồng lab riêng |
+| Vắng hẹn quá 30 phút | Đổi NO_SHOW ở nguồn; OP03 cập nhật sau batch và theo đúng bộ lọc ngày hẹn |
+
+Hồ sơ cập nhật ghi nhận 35 backend tests gồm reception/recovery và generator, UI checks đạt, 4 appointment đăng ký đã khớp DW ở lần kiểm tra. Không cộng thẳng số test này với 42 unit tests của nghiệm thu 03/11. Form và modal đã có kiểm tra hiển thị; điều đó không chứng minh các dashboard Metabase đã được nghiệm thu rendering trình duyệt. Chi tiết ở [BOOKING_RECEPTION](BOOKING_RECEPTION.md), ảnh ở [xác nhận đăng ký](images/booking-confirmation.png) và [validation giờ hẹn](images/booking-time-validation.png).
+
+## 11. Cập nhật vận hành ngày 06/11/2026
+
+Compose hiện nằm tại thư mục gốc, build context và mount `/app` trỏ trực tiếp repository. Không dùng snapshot code trong artifacts/generated/phase5_runtime để chạy bản chính. Thư mục scripts đã được bỏ; module kết nối, bootstrap và công cụ Python cần thiết chuyển sang src/operations.
+
+Sau khi tạo `.env` từ `.env.example`, chạy tại thư mục gốc:
+
+```bash
+docker compose up --build
+```
+
+app-init tạo roles/schema, áp dụng migrations, sinh/nạp nguồn trống và chạy ETL đầu tiên nếu DW chưa được khởi tạo. Khi nguồn đã có dữ liệu và seed hoàn tất, startup không tự nạp lại hoặc reset. kafka-init bảo đảm ba topic tồn tại, airflow-init chuẩn bị metadata/tài khoản, dashboard-init cấu hình kết nối đọc DW và bốn dashboard. Init container Exited (0) là bình thường.
+
+DAG vẫn được tạo paused để người demo chủ động bật lịch. Batch có lịch mỗi giờ, near-RT mỗi 5 phút; trigger thủ công phải được phân biệt với chạy cron. Runtime mới xuất dữ liệu sinh và dashboard output tại artifacts/runtime, tách khỏi evidence lịch sử. Dữ liệu bí mật, runtime và raw evidence không nằm trong bộ GitHub chọn lọc.
+
+Kiểm chứng tái cấu trúc ghi nhận 61/61 tests đạt, không có lỗi import DAG ở lần kiểm tra, dịch vụ chính chạy và health Airflow đạt. Bài thử nguồn trống ở project/volume riêng sinh 13 bảng với 1.899 dòng/140 encounter, nạp DW và RT thành công; startup lần hai bỏ qua seed hoàn tất. Đây là smoke test riêng, không thay kết quả benchmark 180 ngày. Cách chạy và lưu ý đồng hồ Windows/WSL ở [README](../README.md); tổng hợp ở [VALIDATION](VALIDATION.md).
+
+## 12. Theo dõi một nghiệp vụ từ đầu đến báo cáo
+
+1. **Nghiệp vụ:** bệnh nhân đăng ký và nhận lịch hẹn. Appointment là lời hẹn, chưa phải lượt khám đã thực hiện.
+2. **Nguồn:** đăng ký tạo appointment SCHEDULED; check-in mới tạo encounter CHECKED_IN. Tiến trình ngoại trú, nội trú và lab có vòng đời/mốc thời gian riêng.
+3. **Nhánh sự kiện:** outbox hoặc journal gửi Kafka; consumer xác thực, dedup và ghi canonical raw.events, kèm audit delivery/quarantine. Sự kiện là tín hiệu nghiệp vụ, không phải một lượt khám bổ sung.
+4. **Nhánh lịch sử:** batch đọc nguồn vào raw.source_rows và typed staging, kiểm tra DQ/đối soát, nạp dimension/fact/bridge rồi công bố mart. Extract có watermark/lookback, nhưng kiểm tra toàn nguồn và restate facts vẫn còn trong triển khai.
+5. **Nhánh RT:** DAG tính check-in/lab hoàn thành trên `(as_of − 15 phút, as_of]`, có điều kiện ingested_at ≤ as_of, công bố snapshot đồng nhất theo khoa. Sự kiện quá hạn vẫn lưu audit nhưng không tăng số RT hiện tại.
+6. **Dashboard:** Metabase đọc mart bằng tài khoản báo cáo. Chọn ngày nghiệp vụ phù hợp cho lịch sử; RT đọc as_of của snapshot. Bấm refresh dashboard không tự chạy ETL. Lịch seed tháng 5–11 và lịch demo mới không nhất thiết nằm trong cùng bộ lọc.
+7. **Kiểm chứng:** đối chiếu business key, eligibility, công thức KPI và bằng chứng pipeline. Nếu chỉ số chưa tăng, kiểm tra nghiệp vụ đã đủ điều kiện chưa, consumer có nhận event không, batch/near-RT đã publish chưa và bộ lọc có đúng không.
+
+Qua chuỗi này, người đọc có thể nối mục tiêu ở Phase 0, thiết kế ở Phase 1, nguồn ở Phase 2, DW batch ở Phase 3, sự kiện ở Phase 4 và mô hình hoàn thiện/cập nhật vận hành ở Phase 5 mà không nhầm kết quả lịch sử với phiên bản hiện hành.

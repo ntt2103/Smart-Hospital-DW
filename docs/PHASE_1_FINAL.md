@@ -1,5 +1,24 @@
 # Phase 1 — Thiết kế và chuẩn bị triển khai
 
+## Vị trí của phase này trong toàn bộ dự án
+
+Cập nhật hướng dẫn đọc ngày 06/11/2026. Nội dung nghiệm thu bên dưới giữ theo thời điểm thực hiện; phần này giúp nối kết với phiên bản hiện hành.
+
+| Nội dung | Ý nghĩa |
+|---|---|
+| Vai trò | Thiết kế dữ liệu |
+| Đầu vào | Nghiệp vụ và KPI từ Phase 0 |
+| Kết quả bàn giao | ERD, khóa và ràng buộc nguồn, grain fact, chiều phân tích, hợp đồng sự kiện và fixtures |
+| Mối nối | [Phase 0](PHASE_0_FINAL.md) → Phase 1 → [Phase 2](PHASE_2_FINAL.md) |
+
+**Cần hiểu trước khi đọc:** Thiết kế lịch sử là 6 dimension và 7 fact definitions, gồm OP/IP riêng và operational event fact. Phase 5 đổi thành 5 fact vật lý, 7 dimension, 2 bridge. Các sơ đồ dùng chung được cập nhật theo mô hình mới; khi đối chiếu thiết kế cũ cần đọc bảng mô tả trong phase này.
+
+**Mốc hiện hành để đối chiếu:** nguồn phân tích 13 bảng; DW ROLAP theo fact constellation với 5 fact, 7 dimension, 2 bridge; 11 KPI và 4 dashboard. Phần chuyển thiết kế và cập nhật sau nghiệm thu nằm trong [Phase 5](PHASE_5_FINAL.md). Cách chạy hiện tại là `docker compose up --build` ở thư mục gốc, theo [README](../README.md); lệnh scripts/snapshot và cổng demo cũ trong nội dung lịch sử không phải hướng dẫn khởi động hiện tại.
+
+Nếu gặp quy tắc NO_SHOW 24 giờ trong phần lịch sử, đó là quy tắc của phiên bản cũ. Bản tiếp nhận hiện tại dùng 30 phút; không sửa lại số liệu nghiệm thu cũ để giả định chúng được đo theo quy tắc mới. Raw evidence được dẫn trong các báo cáo được lưu local; repository công khai có [bản tổng hợp kiểm chứng](VALIDATION.md).
+
+---
+
 Ngày rà soát: 23/10/2026, giờ Việt Nam. Phạm vi: thiết kế và kiểm chứng logic; chưa nghiệm thu hệ thống chạy thực tế.
 
 ## Công việc đã làm

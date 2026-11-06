@@ -1,5 +1,24 @@
 # Phase 4 — Kafka và near real-time BI
 
+## Vị trí của phase này trong toàn bộ dự án
+
+Cập nhật hướng dẫn đọc ngày 06/11/2026. Nội dung nghiệm thu bên dưới giữ theo thời điểm thực hiện; phần này giúp nối kết với phiên bản hiện hành.
+
+| Nội dung | Ý nghĩa |
+|---|---|
+| Vai trò | Bổ sung Kafka, RT và form đặt lịch ban đầu |
+| Đầu vào | Kho batch và 9 KPI lịch sử từ Phase 3 |
+| Kết quả bàn giao | Consumer sự kiện, 2 KPI RT, dashboard thứ tư và form tạo lịch cho bệnh nhân mẫu |
+| Mối nối | [Phase 3](PHASE_3_FINAL.md) → Phase 4 → [Phase 5](PHASE_5_FINAL.md) |
+
+**Cần hiểu trước khi đọc:** Form trong báo cáo này là phiên bản ngày 23/10, không phải form tiếp nhận hiện tại. Phase 5 bỏ operational event fact để RT đọc canonical raw.events. Cập nhật 05/11 thêm đăng ký lần đầu/tái khám, check-in, outbox và NO_SHOW sau 30 phút; xem phần bổ sung cuối Phase 5. Latency đo ở Phase 4 không phải kết quả đo lại trên bộ Phase 5.
+
+**Mốc hiện hành để đối chiếu:** nguồn phân tích 13 bảng; DW ROLAP theo fact constellation với 5 fact, 7 dimension, 2 bridge; 11 KPI và 4 dashboard. Phần chuyển thiết kế và cập nhật sau nghiệm thu nằm trong [Phase 5](PHASE_5_FINAL.md). Cách chạy hiện tại là `docker compose up --build` ở thư mục gốc, theo [README](../README.md); lệnh scripts/snapshot và cổng demo cũ trong nội dung lịch sử không phải hướng dẫn khởi động hiện tại.
+
+Nếu gặp quy tắc NO_SHOW 24 giờ trong phần lịch sử, đó là quy tắc của phiên bản cũ. Bản tiếp nhận hiện tại dùng 30 phút; không sửa lại số liệu nghiệm thu cũ để giả định chúng được đo theo quy tắc mới. Raw evidence được dẫn trong các báo cáo được lưu local; repository công khai có [bản tổng hợp kiểm chứng](VALIDATION.md).
+
+---
+
 **Hoàn tất ngày23/10/2026 về chức năng, integration và phép đo API-readiness.** Có ba topics, producer/consumer thực, mart event-time, hai KPI RT và dashboard thứ tư; giữ nguyên9 KPI lịch sử. Giới hạn clock/UI được ghi rõ bên dưới.
 
 ## Đã làm gì, để làm gì và kết quả

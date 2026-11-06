@@ -1,5 +1,24 @@
 # Phase 3 — Batch warehouse và historical BI
 
+## Vị trí của phase này trong toàn bộ dự án
+
+Cập nhật hướng dẫn đọc ngày 06/11/2026. Nội dung nghiệm thu bên dưới giữ theo thời điểm thực hiện; phần này giúp nối kết với phiên bản hiện hành.
+
+| Nội dung | Ý nghĩa |
+|---|---|
+| Vai trò | Xây kho lịch sử và báo cáo batch |
+| Đầu vào | Nguồn và hạ tầng đã chạy ở Phase 2 |
+| Kết quả bàn giao | ETL, dimension/fact lịch sử, snapshot giường, 9 KPI lịch sử và 3 dashboard |
+| Mối nối | [Phase 2](PHASE_2_FINAL.md) → Phase 3 → [Phase 4](PHASE_4_FINAL.md) |
+
+**Cần hiểu trước khi đọc:** Các tên fact OP/IP trong kết quả lịch sử thuộc mô hình trước Phase 5. Mô hình hiện hành gộp chúng vào fact_encounter; grain từng lượt vẫn được giữ. Nhánh RT và dashboard thứ tư được triển khai tiếp ở Phase 4.
+
+**Mốc hiện hành để đối chiếu:** nguồn phân tích 13 bảng; DW ROLAP theo fact constellation với 5 fact, 7 dimension, 2 bridge; 11 KPI và 4 dashboard. Phần chuyển thiết kế và cập nhật sau nghiệm thu nằm trong [Phase 5](PHASE_5_FINAL.md). Cách chạy hiện tại là `docker compose up --build` ở thư mục gốc, theo [README](../README.md); lệnh scripts/snapshot và cổng demo cũ trong nội dung lịch sử không phải hướng dẫn khởi động hiện tại.
+
+Nếu gặp quy tắc NO_SHOW 24 giờ trong phần lịch sử, đó là quy tắc của phiên bản cũ. Bản tiếp nhận hiện tại dùng 30 phút; không sửa lại số liệu nghiệm thu cũ để giả định chúng được đo theo quy tắc mới. Raw evidence được dẫn trong các báo cáo được lưu local; repository công khai có [bản tổng hợp kiểm chứng](VALIDATION.md).
+
+---
+
 **Hoàn tất ngày 23/10/2026.** Dữ liệu thực trong warehouse, 9 KPI lịch sử và ba dashboard Metabase đã vận hành qua API/DAG; đã qua gate batch trước khi triển khai streaming.
 
 ## Đã làm gì, để làm gì và kết quả
