@@ -1,0 +1,150 @@
+erDiagram
+    %% Phase 5 warehouse: 5 physical facts, 7 dimensions, 2 association bridges.
+    %% Old OP/IP names are temporary compatibility views, not physical facts.
+    %% Raw, ops and mart entities below show RT processing; they are not DW facts.
+    dim_date ||--o{ fact_appointment : scheduled_date
+    dim_date ||--o{ fact_encounter : OP_checkin_consultation_IP_admission_discharge
+    dim_date ||--o{ fact_bed_assignment : assigned_released_dates
+    dim_date ||--o{ fact_bed_snapshot_daily : local_midnight_date
+    dim_date ||--o{ fact_lab_order : ordered_result_dates
+    dim_patient ||--o{ fact_appointment : patient
+    dim_patient ||--o{ fact_encounter : patient
+    dim_patient ||--o{ fact_bed_assignment : patient
+    dim_patient ||--o{ fact_lab_order : patient
+    dim_department ||--o{ fact_appointment : owning_department
+    dim_department ||--o{ fact_encounter : owning_department
+    dim_department ||--o{ fact_bed_assignment : physical_bed_department
+    dim_department ||--o{ fact_bed_snapshot_daily : physical_bed_department
+    dim_department ||--o{ fact_lab_order : requesting_department
+    dim_department ||--o{ dim_doctor : version_department
+    dim_doctor ||--o{ fact_appointment : scheduled_doctor_version
+    dim_doctor ||--o{ fact_encounter : OP_consultation_or_IP_admission_version
+    dim_doctor ||--o{ fact_lab_order : order_doctor_version
+    dim_bed ||--o{ fact_bed_assignment : bed
+    dim_bed ||--o{ fact_bed_snapshot_daily : bed
+    dim_lab_test_type ||--o{ fact_lab_order : test_type
+    fact_encounter ||--o{ bridge_encounter_doctor : participation
+    dim_doctor ||--o{ bridge_encounter_doctor : version_at_joined_at
+    fact_encounter ||--o{ bridge_encounter_diagnosis : diagnosis_association
+    dim_diagnosis ||--o{ bridge_encounter_diagnosis : diagnosis
+
+    dim_date {
+        int date_key PK "YYYYMMDD; 0 when not applicable or unknown"
+        date calendar_date UK
+    }
+    dim_patient {
+        bigint patient_sk PK
+        bigint patient_id UK
+    }
+    dim_department {
+        bigint department_sk PK
+        bigint department_id UK
+    }
+    dim_doctor {
+        bigint doctor_sk PK "0 if no observed history coverage"
+        bigint doctor_id "Stable BK; SCD2"
+        bigint department_sk FK
+        timestamptz effective_from "Inclusive"
+        timestamptz effective_to "Exclusive; NULL=current version"
+        boolean is_active "Independent of current version"
+    }
+    dim_bed {
+        bigint bed_sk PK
+        bigint bed_id UK
+    }
+    dim_lab_test_type {
+        bigint lab_test_type_sk PK
+        bigint lab_test_type_id UK
+    }
+    dim_diagnosis {
+        bigint diagnosis_sk PK
+        bigint diagnosis_id UK
+        text diagnosis_code UK "Synthetic code; SCD1 description"
+    }
+    fact_appointment {
+        bigint appointment_sk PK
+        bigint appointment_id UK "One row per appointment"
+        int scheduled_date_key FK
+        boolean is_noshow_eligible
+    }
+    fact_encounter {
+        bigint encounter_sk PK
+        bigint encounter_id UK "One row per OP or IP encounter"
+        text encounter_type "OUTPATIENT or INPATIENT"
+        bigint appointment_id "Optional OP booking"
+        bigint parent_encounter_id "Optional OP to IP parent"
+        bigint doctor_id "Preserved even when doctor_sk=0"
+        int consultation_date_key FK
+        int admission_date_key FK
+        int discharge_date_key FK
+        numeric waiting_minutes "Only eligible OP; otherwise NULL"
+        numeric los_days "Only eligible discharged IP; otherwise NULL"
+    }
+    fact_bed_assignment {
+        bigint bed_assignment_sk PK
+        bigint bed_assignment_id UK "One row per allocated interval"
+        bigint encounter_id
+        bigint bed_sk FK
+        timestamptz assigned_at
+        timestamptz released_at
+    }
+    fact_bed_snapshot_daily {
+        bigint bed_snapshot_sk PK
+        bigint bed_sk FK "Unique together with snapshot_date_key"
+        int snapshot_date_key FK "One bed per Vietnam local midnight"
+        boolean is_active
+        boolean is_occupied
+        boolean is_snapshot_valid
+    }
+    fact_lab_order {
+        bigint lab_order_sk PK
+        bigint lab_order_id UK "One row per order"
+        int result_date_key FK
+        numeric tat_minutes
+        int target_tat_minutes_at_order "Frozen at order"
+    }
+    bridge_encounter_doctor {
+        bigint association_id PK "Stable source association identity"
+        bigint encounter_id FK
+        bigint doctor_id "Retains distinct doctors sharing SK0"
+        bigint doctor_sk FK
+        text role "PRIMARY or CONSULTING"
+        timestamptz joined_at
+        timestamptz left_at
+        boolean is_active
+    }
+    bridge_encounter_diagnosis {
+        bigint association_id PK
+        bigint encounter_id FK
+        bigint diagnosis_id
+        bigint diagnosis_sk FK
+        boolean is_primary
+        timestamptz recorded_at
+        boolean is_active
+    }
+
+    %% Logical processing links; canonical raw is validated/deduplicated by consumer.
+    %% RT functions count DISTINCT entity_id in (as_of-15m,as_of], ingested_at<=as_of.
+    %% Receipts and every department snapshot publish in one transaction; idle=0.
+    raw_events ||..o{ ops_rt_event_receipts : RT_signals_actually_used
+    ops_rt_event_receipts }o..|| mart_realtime_department_snapshot : same_atomic_refresh
+    raw_events {
+        uuid event_id PK "Canonical event; deliveries audited separately"
+        text topic
+        text event_type
+        bigint entity_id
+        timestamptz event_time
+        timestamptz ingested_at
+    }
+    ops_rt_event_receipts {
+        uuid run_id PK
+        uuid event_id PK
+        bigint department_sk
+        timestamptz as_of "Successful refresh receipt, not raw arrival"
+    }
+    mart_realtime_department_snapshot {
+        timestamptz as_of PK
+        bigint department_sk PK
+        bigint checkins_last_15m
+        bigint lab_results_last_15m
+    }

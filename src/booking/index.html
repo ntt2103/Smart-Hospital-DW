@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Đặt lịch khám với dữ liệu bệnh nhân demo và theo dõi lịch hẹn đi vào hệ thống dữ liệu bệnh viện.">
+  <title>Đặt lịch khám · Hospital Demo</title>
+  <style>
+    :root{--ink:#123039;--muted:#5c7076;--teal:#087e78;--teal-dark:#05625e;--mint:#e6f4f0;--line:#dae5e5;--paper:#fff;--bg:#f4f8f7;--error:#a52f2f;--amber:#8b631a;--radius:20px}
+    *{box-sizing:border-box} [hidden]{display:none!important}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",Arial,sans-serif;line-height:1.55;font-size:15px;-webkit-font-smoothing:antialiased}
+    button,input,select{font:inherit}button,a,input,select{-webkit-tap-highlight-color:transparent}
+    button{cursor:pointer}button:disabled{cursor:default;opacity:.58}
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #78c8c0;outline-offset:3px}
+    .shell{max-width:1160px;margin:0 auto;padding:0 36px}
+    .masthead{border-bottom:1px solid var(--line);background:#ffffffd9}
+    .masthead .shell{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:750;letter-spacing:.01em;font-size:16px}
+    .brand-mark{height:38px;width:38px;display:grid;place-items:center;background:var(--teal);color:white;border-radius:12px}
+    .brand-mark svg{width:22px;height:22px}.brand small{display:block;font-size:10px;letter-spacing:.14em;color:var(--muted);font-weight:650;margin-top:1px}
+    .local-tag{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:white;padding:6px 11px;border-radius:100px;font-size:12px;color:#45635e;white-space:nowrap}
+    .local-tag:before{content:"";height:6px;width:6px;border-radius:50%;background:var(--teal)}
+    main{padding-top:43px;padding-bottom:50px}.eyebrow{font-size:11px;letter-spacing:.13em;color:var(--teal);font-weight:750;text-transform:uppercase;margin:0 0 9px}
+    h1{font-size:clamp(29px,4vw,39px);font-weight:730;line-height:1.2;letter-spacing:-.035em;margin:0 0 13px}
+    .lead{color:var(--muted);max-width:650px;margin:0;font-size:15px;line-height:1.7}
+    .workspace{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:25px;margin-top:30px;align-items:start}
+    .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 8px 26px #153f3410;overflow:hidden}
+    .card-head{padding:25px 28px 21px;border-bottom:1px solid #e8eeee;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .card-head h2{font-size:18px;line-height:1.3;margin:0;font-weight:720;letter-spacing:-.02em}.step-number{color:var(--teal);background:var(--mint);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:750;letter-spacing:.04em;white-space:nowrap}
+    .form-body{padding:24px 28px 26px}fieldset{border:0;margin:0;padding:0;min-width:0}label{display:block;font-weight:650;font-size:13px;margin-bottom:8px}.field{margin-bottom:20px}
+    input,select{width:100%;min-height:46px;border:1px solid #cddcdb;border-radius:9px;padding:10px 12px;color:var(--ink);background:white;transition:border-color .15s,box-shadow .15s}
+    input:hover,select:hover{border-color:#80b5ae}input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 3px #087e7812}input:disabled,select:disabled{background:#f4f7f6;color:#617574}
+    .hint{margin:7px 0 0;font-size:12px;color:var(--muted);line-height:1.6}.inline-button{padding:0;margin:0 0 0 3px;border:0;background:none;color:var(--teal-dark);font-size:12px;text-decoration:underline;text-underline-offset:3px;font-weight:650}
+    .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}.zone{font-size:11px;font-weight:500;color:var(--muted);margin-left:5px}.required{color:var(--teal)}
+    .demo-note{display:flex;align-items:start;gap:10px;padding:13px 14px;border-radius:10px;background:#f0f7f5;font-size:12px;color:#4e6a65;margin:3px 0 21px}.demo-note svg{width:17px;height:17px;flex:0 0 auto;margin-top:1px}.demo-note p{margin:0}
+    .primary{display:inline-flex;justify-content:center;align-items:center;gap:10px;width:100%;min-height:47px;padding:11px 18px;border:1px solid var(--teal);border-radius:9px;background:var(--teal);color:white;font-weight:650;font-size:14px;transition:background .15s,transform .15s}
+    .primary:hover:not(:disabled){background:var(--teal-dark);border-color:var(--teal-dark)}.primary:active:not(:disabled){transform:translateY(1px)}.primary svg{width:17px;height:17px}
+    .secondary{display:inline-flex;justify-content:center;align-items:center;gap:7px;min-height:38px;padding:8px 12px;border:1px solid #c9ddda;border-radius:8px;background:white;color:var(--teal-dark);font-size:12px;font-weight:650}.secondary:hover:not(:disabled){background:#f0f8f5}.form-footer{margin:11px 0 0;text-align:center;font-size:11px;color:var(--muted)}
+    .message{padding:12px 14px;border-radius:9px;font-size:12px;line-height:1.7;margin:0 0 17px}.message.error{background:#fff1ef;color:var(--error);border:1px solid #f1d6d1}.message.info{background:#eef6fa;color:#315d72;border:1px solid #d5e6ee}.message.warning{background:#fff8e9;color:var(--amber);border:1px solid #eedfbc}
+    .tracker-head{padding:24px 25px 20px;border-bottom:1px solid #e8eeee}.tracker-head .eyebrow{font-size:10px;margin-bottom:8px}.tracker-head h2{font-size:20px;font-weight:720;letter-spacing:-.025em;line-height:1.3;margin:0 0 9px}.tracker-head p:last-child{color:var(--muted);font-size:12px;line-height:1.7;margin:0}
+    .booking-summary{padding:17px 25px;background:#f3faf7;border-bottom:1px solid #dcece4}.booking-summary .booking-label{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#52706a;font-weight:700;margin:0 0 3px}.booking-id{font-size:23px;font-weight:750;letter-spacing:-.025em;margin:0;color:var(--teal-dark);overflow-wrap:anywhere}.booking-time{font-size:12px;color:#52706a;margin:3px 0 0}
+    .timeline{list-style:none;margin:0;padding:25px}.stage{position:relative;display:grid;grid-template-columns:27px 1fr;gap:12px;padding-bottom:22px;min-width:0}.stage:last-child{padding-bottom:0}.stage:not(:last-child):before{content:"";position:absolute;left:12px;top:27px;bottom:0;width:1px;background:#dfE9e6}
+    .stage-icon{width:26px;height:26px;border:1px solid #d6e3df;border-radius:50%;background:#f7faf8;display:grid;place-items:center;font-size:11px;color:#84958f;font-weight:700;position:relative;z-index:1}.stage.done .stage-icon{background:var(--teal);border-color:var(--teal);color:white}.stage.waiting .stage-icon{background:#fdf8eb;border-color:#e7d8af;color:#9a782b}.stage-title{display:flex;flex-wrap:wrap;align-items:center;gap:5px 9px;line-height:1.4;padding-top:2px}.stage-title strong{font-size:13px;font-weight:650}.stage-state{font-size:10px;font-weight:650;color:#7b8e87;white-space:nowrap}.stage.done .stage-state{color:var(--teal)}.stage.waiting .stage-state{color:#9a782b}.stage p{font-size:11px;line-height:1.6;color:var(--muted);margin:4px 0 0}
+    .tracker-bottom{padding:0 25px 23px}.poll-note{font-size:11px;line-height:1.6;color:var(--muted);margin:0 0 12px}.button-row{display:flex;flex-wrap:wrap;gap:8px}.status-error{margin:0 0 13px;color:var(--amber);font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+    .expectation{display:flex;gap:11px;margin-top:18px;padding:0 6px;color:var(--muted);font-size:11px;line-height:1.7}.expectation svg{width:17px;height:17px;flex:0 0 auto;margin-top:2px}.expectation p{margin:0}.expectation strong{font-weight:650;color:#526964}
+    footer{border-top:1px solid var(--line);padding:20px 0 25px}.footer-inner{display:flex;justify-content:space-between;gap:20px;font-size:11px;color:#6b7f7a}.footer-inner p{margin:0}
+    @media(max-width:850px){.shell{padding:0 24px}.workspace{gap:18px;grid-template-columns:minmax(0,1fr) minmax(0,.9fr)}.form-body{padding:22px}.card-head{padding:22px}.field-grid{grid-template-columns:1fr;gap:0}.tracker-head,.timeline{padding:22px}.booking-summary{padding:17px 22px}.tracker-bottom{padding:0 22px 22px}}
+    @media(max-width:650px){.shell{padding:0 19px}.masthead .shell{min-height:72px}.brand{font-size:14px;gap:9px}.brand small{font-size:9px}.local-tag{font-size:10px;padding:5px 8px}.brand-mark{width:33px;height:33px;border-radius:10px}main{padding-top:30px;padding-bottom:33px}.lead{font-size:14px}.workspace{grid-template-columns:1fr;margin-top:24px;gap:21px}.field-grid{grid-template-columns:1fr 1fr;gap:15px}.card{border-radius:16px}.footer-inner{flex-direction:column;gap:5px}.expectation{padding:0 3px}.tracker-head h2{font-size:19px}}
+    @media(max-width:380px){.field-grid{grid-template-columns:1fr;gap:0}.brand small{display:none}.shell{padding:0 14px}.form-body,.card-head{padding:20px}.local-tag{font-size:9px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+<header class="masthead"><div class="shell"><div class="brand"><span class="brand-mark">✚</span><span>HOSPITAL<small>CHĂM SÓC SỨC KHỎE</small></span></div><span class="local-tag">Cổng đặt lịch khám</span></div></header>
+<main class="shell">
+<p class="eyebrow">Đăng ký khám bệnh</p><h1>Chủ động lịch khám. An tâm chăm sóc.</h1>
+<p class="lead">Điền thông tin, lựa chọn chuyên khoa và bác sĩ, sau đó kiểm tra lại trước khi đặt lịch. Vui lòng đặt trước giờ hẹn ít nhất 30 phút.</p>
+<div class="workspace"><section class="card"><div class="card-head"><h2>Thông tin đặt lịch</h2><span class="step-number">01 / ĐĂNG KÝ</span></div><div class="form-body">
+<p id="error" class="message error" role="alert" hidden></p>
+<form id="booking-form"><fieldset id="booking-fields" disabled>
+<div class="field"><label for="patient-name">Họ và tên <span class="required">*</span></label><input id="patient-name" autocomplete="name" placeholder="Ví dụ: Nguyễn Minh An" required minlength="2" maxlength="120"></div>
+<div class="field"><label for="purpose">Mục đích khám <span class="required">*</span></label><select id="purpose" required><option value="">Chọn mục đích khám</option></select></div>
+<div class="field" id="patient-code-field" hidden><label for="patient-code">Mã bệnh nhân <span class="required">*</span></label><input id="patient-code" maxlength="32" autocomplete="off" placeholder="Nhập mã bệnh nhân đã được cấp"><p class="hint">Dùng mã trên hồ sơ hoặc phiếu khám trước đây của bạn.</p></div>
+<div class="field"><label for="department">Chuyên khoa <span class="required">*</span></label><select id="department" required><option value="">Chọn chuyên khoa</option></select></div>
+<div class="field"><label for="doctor">Bác sĩ <span class="required">*</span></label><select id="doctor" required disabled><option value="">Chọn chuyên khoa trước</option></select><p class="hint">Chọn bác sĩ thuộc chuyên khoa bạn muốn khám.</p></div>
+<div class="field"><label for="scheduled-at">Ngày và giờ khám <span class="required">*</span></label><input id="scheduled-at" type="datetime-local" required step="60" aria-describedby="slot-hint slot-error"><p class="hint" id="slot-hint">Giờ Việt Nam (UTC+7). Đặt trước ít nhất 30 phút, tối đa 365 ngày.</p><p id="slot-error" class="message error" role="alert" hidden></p></div>
+<p class="demo-note">Khám lần đầu không cần mã bệnh nhân. Mã sẽ được cấp khi làm thủ tục check-in.</p>
+</fieldset><button id="submit" class="primary" disabled>Xem lại thông tin →</button></form>
+</div></section>
+<div><section class="card"><div class="tracker-head"><p class="eyebrow">02 / LỊCH HẸN CỦA BẠN</p><h2 id="receipt-title">Sẵn sàng nhận đăng ký</h2><p id="receipt-description" aria-live="polite">Thông tin đăng ký và mã tiếp nhận sẽ xuất hiện sau khi bạn xác nhận.</p></div>
+<div id="receipt" class="form-body" hidden><dl id="receipt-details"></dl><p id="receipt-note" class="message info"></p><div class="button-row"><button id="refresh" class="secondary">Kiểm tra lại</button><button id="new" class="secondary">Đăng ký mới</button></div>
+<details style="margin-top:24px"><summary>Quầy tiếp nhận · Demo check-in</summary><p class="hint">Dành cho người trình diễn tại quầy. Tiếp nhận từ 30 phút trước đến 30 phút sau giờ hẹn. Quá thời gian này mà chưa đến, lịch tự chuyển thành vắng hẹn (NO_SHOW). Check-in tạo lượt khám và cấp mã bệnh nhân cho người khám lần đầu.</p><button id="checkin" class="secondary" style="margin-top:12px">Xác nhận bệnh nhân đã đến</button><p id="checkin-error" role="alert" class="status-error"></p></details></div></section>
+<p class="hint" style="padding:12px">Môi trường mô phỏng phục vụ trình diễn. Tên và học hàm/học vị bác sĩ là thông tin minh họa, không đại diện nhân sự của bệnh viện thực tế.</p></div></div>
+</main><footer><div class="shell footer-inner"><p>Hospital · Đặt lịch khám</p><p>Múi giờ: Asia/Ho_Chi_Minh</p></div></footer>
+<dialog id="confirmation" style="max-width:560px;width:calc(100% - 32px);border:1px solid #dae5e5;border-radius:20px;padding:28px;color:#123039"><h2 style="margin-top:0">Xác nhận thông tin đặt khám</h2><p class="hint">Vui lòng kiểm tra thông tin trước khi đặt lịch.</p><dl id="confirmation-details"></dl><p id="confirmation-error" class="message error" role="alert" hidden></p><div class="button-row"><button id="edit" class="secondary">Quay lại chỉnh sửa</button><button id="confirm" class="primary" style="width:auto">Xác nhận đặt lịch</button></div></dialog>
+<style>dialog::backdrop{background:#12303980}dl{margin:18px 0}dt{font-size:12px;color:#5c7076;margin-top:14px}dd{margin:3px 0 0;font-weight:650;overflow-wrap:anywhere}summary{cursor:pointer;font-weight:650;font-size:13px}</style>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), KEY='hospital-reception-v2';
+let catalog, pending=null, saved=null, busy=false, uncertain=false;
+let serverOffset=0;
+const message=(id,text)=>{$(id).textContent=text||'';$(id).hidden=!text;};
+async function api(path,body){const response=await fetch(path,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok){const error=new Error(data.error||'Dịch vụ chưa sẵn sàng.');error.status=response.status;throw error;}return data;}
+function localTime(value){return new Intl.DateTimeFormat('vi-VN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(value));}
+function localInput(date){return new Date(date.getTime()+7*3600000).toISOString().slice(0,16);}
+function minSlot(){return localInput(new Date(Math.ceil((Date.now()+serverOffset+30*60000)/60000)*60000));}
+function validateTime(report=false){
+ const input=$('scheduled-at'), now=Date.now()+serverOffset;
+ input.min=minSlot();
+ input.max=localInput(new Date(now+365*86400000));
+ $('slot-hint').textContent='Giờ Việt Nam (UTC+7). Giờ hẹn sớm nhất: '+localTime(input.min+':00+07:00')+'. Đặt tối đa 365 ngày.';
+ const slot=Date.parse(input.value+':00+07:00');
+ let error='';
+ if(input.value && (!Number.isFinite(slot)||slot<now+30*60000))error='Giờ khám phải cách thời điểm đặt ít nhất 30 phút. Vui lòng chọn từ '+localTime(input.min+':00+07:00')+'.';
+ else if(input.value && slot>now+365*86400000)error='Chỉ có thể đặt lịch trong vòng 365 ngày.';
+ input.setCustomValidity(error);input.setAttribute('aria-invalid',error?'true':'false');message('slot-error',error);
+ if(error&&report)input.reportValidity();
+ return !error;
+}
+$('scheduled-at').addEventListener('input',()=>validateTime());
+$('scheduled-at').addEventListener('change',()=>validateTime());
+$('scheduled-at').addEventListener('focus',()=>validateTime());
+$('scheduled-at').addEventListener('invalid',()=>validateTime());
+function option(select,value,text){const el=document.createElement('option');el.value=value;el.textContent=text;select.append(el);}
+function purposeChanged(){const returning=$('purpose').value==='FOLLOW_UP';$('patient-code-field').hidden=!returning;$('patient-code').required=returning;}
+function doctors(){ $('doctor').replaceChildren();option($('doctor'),'','Chọn bác sĩ');const matches=catalog.doctors.filter(d=>d.department_id===Number($('department').value));for(const d of matches)option($('doctor'),d.id,d.name);$('doctor').disabled=!matches.length;}
+function details(target,request,extra=[]){const department=catalog.departments.find(d=>d.id===request.department_id),doctor=catalog.doctors.find(d=>d.id===request.doctor_id);$(target).replaceChildren();for(const [label,value] of [['Họ và tên',request.patient_name],['Mục đích khám',catalog.purposes[request.purpose]],...(request.patient_code?[['Mã bệnh nhân',request.patient_code]]:[]),['Chuyên khoa',department?.name],['Bác sĩ',doctor?.name],['Giờ hẹn',localTime(request.scheduled_at)],...extra]){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;$(target).append(dt,dd);}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(pending));}catch(_){message('error','Không lưu được mã trên trình duyệt. Hãy giữ mã đăng ký sau khi gửi.');}}
+function render(data){saved=data;$('receipt').hidden=false;$('receipt-title').textContent=data.status==='NO_SHOW'?'Vắng hẹn · NO_SHOW':data.encounter_id?'Đã check-in thành công':'Đăng ký đã được ghi nhận';details('receipt-details',data,[['Mã đăng ký',data.request_id],...(data.appointment_id?[['Mã lịch hẹn','#'+data.appointment_id]]:[])]);$('receipt-note').textContent=data.status==='NO_SHOW'?'Lịch hẹn đã quá 30 phút và chưa check-in, được ghi nhận là vắng hẹn. Dữ liệu được giữ lại để thống kê.':data.encounter_id?'Mã bệnh nhân: '+data.patient_code+'. Hãy giữ mã này cho những lần tái khám.':data.awaiting_patient_code?'Vui lòng mang mã đăng ký đến quầy. Mã bệnh nhân chính thức sẽ được cấp khi check-in.':'Lịch tái khám đã được lưu. Vui lòng đến quầy làm thủ tục theo giờ hẹn.';$('receipt-description').textContent='Bạn có thể kiểm tra lại trạng thái bằng mã đăng ký này.';$('checkin').disabled=!!data.encounter_id||['NO_SHOW','CANCELLED','RESCHEDULED'].includes(data.status);$('booking-fields').disabled=true;$('submit').disabled=true;}
+$('purpose').addEventListener('change',purposeChanged);$('department').addEventListener('change',doctors);
+$('booking-form').addEventListener('submit',event=>{event.preventDefault();if(busy)return;message('error','');if(!uncertain){if(!validateTime(true)||!$('booking-form').reportValidity())return;const scheduled=$('scheduled-at').value+':00+07:00';if(Date.parse(scheduled)<Date.now()+serverOffset+30*60000){message('error','Phải đặt trước giờ hẹn ít nhất 30 phút. Vui lòng chọn lại giờ.');return;}pending={request_id:crypto.randomUUID(),patient_name:$('patient-name').value.trim(),purpose:$('purpose').value,patient_type:$('purpose').value==='FOLLOW_UP'?'RETURNING':'FIRST',patient_code:$('purpose').value==='FOLLOW_UP'?$('patient-code').value.trim():'',department_id:Number($('department').value),doctor_id:Number($('doctor').value),scheduled_at:scheduled};}details('confirmation-details',pending);message('confirmation-error','');$('edit').disabled=uncertain;$('confirmation').showModal();});
+$('edit').addEventListener('click',()=>{$('confirmation').close();pending=null;});
+$('confirm').addEventListener('click',async()=>{if(busy)return;busy=true;$('confirm').disabled=true;$('edit').disabled=true;persist();try{const data=await api('/api/registrations',pending);uncertain=false;render(data);$('confirmation').close();}catch(error){uncertain=!error.status||error.status>=500||error.status===409;message('confirmation-error',error.message+(uncertain?' Thử lại cùng yêu cầu này để tránh trùng.':''));$('booking-fields').disabled=uncertain;$('edit').disabled=uncertain;if(!uncertain){try{localStorage.removeItem(KEY);}catch(_){}}}finally{busy=false;$('confirm').disabled=false;}});
+$('confirmation').addEventListener('cancel',event=>{if(busy||uncertain)event.preventDefault();});
+async function refresh(){if(!pending)return;try{render(await api('/api/registrations/'+pending.request_id));}catch(error){message('error',error.message);}}
+$('refresh').addEventListener('click',refresh);
+setInterval(()=>{if(saved&&!busy&&!saved.encounter_id&&saved.status==='SCHEDULED')refresh();},15000);
+$('checkin').addEventListener('click',async()=>{if(busy||!saved)return;busy=true;$('checkin').disabled=true;try{render(await api('/api/registrations/'+saved.request_id+'/check-in',{}));$('checkin-error').textContent='';}catch(error){$('checkin-error').textContent=error.message;$('checkin').disabled=false;}finally{busy=false;}});
+$('new').addEventListener('click',()=>{try{localStorage.removeItem(KEY);}catch(_){}pending=saved=null;uncertain=false;$('booking-form').reset();purposeChanged();doctors();$('scheduled-at').min=minSlot();$('scheduled-at').value=catalog.default_slot_local;validateTime();$('booking-fields').disabled=false;$('submit').disabled=false;$('receipt').hidden=true;$('receipt-title').textContent='Sẵn sàng nhận đăng ký';message('error','');$('patient-name').focus();});
+(async()=>{try{catalog=await api('/api/catalogs');serverOffset=Date.parse(catalog.server_now)-Date.now();for(const [key,label]of Object.entries(catalog.purposes))option($('purpose'),key,label);for(const d of catalog.departments)option($('department'),d.id,d.name);$('scheduled-at').min=minSlot();$('scheduled-at').value=catalog.default_slot_local;validateTime();$('booking-fields').disabled=false;$('submit').disabled=false;let previous;try{previous=JSON.parse(localStorage.getItem(KEY));}catch(_){}if(previous?.request_id){pending=previous;try{render(await api('/api/registrations/'+pending.request_id));}catch(error){if(error.status===404){uncertain=true;$('booking-fields').disabled=true;message('error','Yêu cầu trước chưa xác nhận được. Nhấn Xem lại thông tin để gửi lại cùng mã.');}else{uncertain=true;$('booking-fields').disabled=true;message('error','Chưa kiểm tra được yêu cầu đã lưu. Nhấn Xem lại thông tin để thử lại.');}}}}catch(error){message('error','Không tải được danh mục: '+error.message);}})();
+</script></body></html>

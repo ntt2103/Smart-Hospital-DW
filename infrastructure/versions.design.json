@@ -1,0 +1,64 @@
+{
+  "document_version": "1.0.0",
+  "baseline_date": "2026-10-22",
+  "status": "runtime_verified_local_with_recorded_clock_and_browser_limitations",
+  "runtime_verified": true,
+  "image_digests_locked": true,
+  "selection_policy": "Explicit reference candidates, not latest-version claims. Resolve image tags/digests and compatibility in Phase 2; record updates before deployment.",
+  "components": {
+    "postgresql": {
+      "version": "16.15",
+      "image_candidate": "postgres:16.15-bookworm",
+      "source": "https://www.postgresql.org/docs/release/16.15/"
+    },
+    "airflow": {
+      "version": "3.1.8",
+      "python_family": "3.12",
+      "image_candidate": "apache/airflow:3.1.8-python3.12",
+      "executor": "LocalExecutor",
+      "source": "https://airflow.apache.org/docs/apache-airflow/3.1.8/index.html",
+      "constraints_candidate": "https://raw.githubusercontent.com/apache/airflow/constraints-3.1.8/constraints-3.12.txt"
+    },
+    "python_services": {
+      "version": "3.12.15",
+      "image_candidate": "python:3.12.15-slim-bookworm",
+      "source": "https://www.python.org/downloads/release/python-31215/"
+    },
+    "kafka": {
+      "version": "3.9.1",
+      "image_candidate": "apache/kafka:3.9.1",
+      "mode": "single_broker_combined_kraft",
+      "source": "https://kafka.apache.org/39/getting-started/docker/"
+    },
+    "metabase": {
+      "version": "0.64.1",
+      "image_candidate": "metabase/metabase:v0.64.1",
+      "source": "https://github.com/metabase/metabase/releases/tag/v0.64.1",
+      "note": "Validate exact release image tag and immutable digest at pull time; release-page aliases are not deployment locks."
+    },
+    "docker_compose": {
+      "version_candidate": "2.29.7",
+      "policy": "Version 2 CLI; newer host version allowed after config/smoke tests.",
+      "source": "https://github.com/docker/compose/releases/tag/v2.29.7"
+    }
+  },
+  "phase2_required_checks": [
+    "Resolve all container tags and lock platform-specific immutable digests.",
+    "Build Airflow providers and Python database/Kafka/JSON dependencies against matching constraints; freeze exact dependency versions.",
+    "Smoke-test metadata migrations, API authentication, LocalExecutor task execution and database connectivity.",
+    "Apply source, ops, ingestion and warehouse draft DDL in isolated databases and inspect constraints.",
+    "Verify Kafka internal/external listeners, retention, durable restart and consumer offset recovery.",
+    "Verify Metabase application PostgreSQL connection and SELECT-only reporting permissions.",
+    "Measure actual RAM/CPU/disk and adjust local resource settings."
+  ],
+  "verification_evidence": {
+    "phase2": "artifacts/phase2/execution_status.json",
+    "phase3": "artifacts/phase3/execution_status.json",
+    "phase4": "artifacts/phase4/execution_status.json",
+    "images": "infrastructure/images.lock.json",
+    "dependencies": "requirements.lock.txt",
+    "browser_render_verified": false,
+    "windows_wsl_clock_skew_seconds": 90,
+    "repository_restructure": "artifacts/maintenance/restructure_validation.json"
+  }
+}

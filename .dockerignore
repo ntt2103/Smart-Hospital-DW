@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+artifacts
+docs
+tmp
+**/__pycache__
+**/*.pyc
+.venv
+runtime

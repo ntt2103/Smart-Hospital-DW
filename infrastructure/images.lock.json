@@ -1,0 +1,37 @@
+[
+  {
+    "image": "postgres:16.15-bookworm",
+    "id": "sha256:d81f7b51697014367236d07ec58b54153fc28f828b72bf247fe5c7487520bcb0",
+    "repo_digests": [
+      "postgres@sha256:d81f7b51697014367236d07ec58b54153fc28f828b72bf247fe5c7487520bcb0"
+    ]
+  },
+  {
+    "image": "smart_hospital_dw-foundation:latest",
+    "id": "sha256:c812071b23d1380de325c21d9e0698d8cad317b61a42aeb2c4b9068642932f09",
+    "repo_digests": [
+      "smart_hospital_dw-foundation@sha256:c812071b23d1380de325c21d9e0698d8cad317b61a42aeb2c4b9068642932f09"
+    ]
+  },
+  {
+    "image": "smart-hospital-airflow:3.1.8",
+    "id": "sha256:4c6263509328e942a121a62d273285d892e15613a3c91490e06b4b213bc51e2f",
+    "repo_digests": [
+      "smart-hospital-airflow@sha256:4c6263509328e942a121a62d273285d892e15613a3c91490e06b4b213bc51e2f"
+    ]
+  },
+  {
+    "image": "metabase/metabase:v0.64.1",
+    "id": "sha256:fcf3ad4c00f303d96c63233967a24f0d0348bbb725d4704ee1961f9185674e13",
+    "repo_digests": [
+      "metabase/metabase@sha256:fcf3ad4c00f303d96c63233967a24f0d0348bbb725d4704ee1961f9185674e13"
+    ]
+  },
+  {
+    "image": "apache/kafka:3.9.1",
+    "id": "sha256:4ceccc577f03f51f6af8dbfda55194d0d892f4fa7913ffbded567ce3895622ed",
+    "repo_digests": [
+      "apache/kafka@sha256:4ceccc577f03f51f6af8dbfda55194d0d892f4fa7913ffbded567ce3895622ed"
+    ]
+  }
+]

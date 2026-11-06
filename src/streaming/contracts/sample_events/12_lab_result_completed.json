@@ -1,0 +1,22 @@
+{
+  "event_id": "10000000-0000-4000-8000-000000000012",
+  "event_type": "result_completed",
+  "entity_id": 4001,
+  "schema_version": "1.0.0",
+  "event_time": "2026-10-22T02:15:00Z",
+  "published_at": "2026-10-22T02:15:02Z",
+  "source_system": "hospital_simulator",
+  "payload": {
+    "lab_order_id": 4001,
+    "encounter_id": 2001,
+    "patient_id": 1,
+    "department_id": 1,
+    "lab_test_type_id": 1,
+    "target_tat_minutes_at_order": 60,
+    "ordered_at": "2026-10-22T01:30:00Z",
+    "status": "COMPLETED",
+    "collected_at": "2026-10-22T01:35:00Z",
+    "processing_started_at": "2026-10-22T01:40:00Z",
+    "result_completed_at": "2026-10-22T02:15:00Z"
+  }
+}

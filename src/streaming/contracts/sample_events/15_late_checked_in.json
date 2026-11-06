@@ -1,0 +1,19 @@
+{
+  "event_id": "10000000-0000-4000-8000-000000000015",
+  "event_type": "checked_in",
+  "entity_id": 2003,
+  "schema_version": "1.0.0",
+  "event_time": "2026-10-22T01:50:00Z",
+  "published_at": "2026-10-22T01:59:00Z",
+  "source_system": "hospital_simulator",
+  "payload": {
+    "encounter_id": 2003,
+    "doctor_id": 1,
+    "patient_id": 1,
+    "department_id": 1,
+    "encounter_type": "OUTPATIENT",
+    "appointment_id": null,
+    "parent_encounter_id": null,
+    "checked_in_at": "2026-10-22T01:50:00Z"
+  }
+}

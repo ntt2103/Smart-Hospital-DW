@@ -1,0 +1,266 @@
+name: smart_hospital_dw_phase5
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.12.15-slim-bookworm}
+x-db: &db
+  image: ${POSTGRES_IMAGE:-postgres:16.15-bookworm}
+  restart: unless-stopped
+  healthcheck:
+    test: [CMD-SHELL, 'pg_isready -U postgres -d "$${POSTGRES_DB}"']
+    interval: 5s
+    timeout: 5s
+    retries: 30
+  networks: [hospital]
+x-airflow: &airflow
+
+  build:
+    context: .
+    dockerfile: airflow.Dockerfile
+    args:
+      AIRFLOW_IMAGE: ${AIRFLOW_IMAGE:-apache/airflow:3.1.8-python3.12}
+  env_file: .env
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_meta_owner:${AIRFLOW_META_PASSWORD}@postgres-meta/airflow_meta
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api:8080/execution/
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+    AIRFLOW__API_AUTH__JWT_LEEWAY: 120
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW_API_SECRET}
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    AIRFLOW__SCHEDULER__SCHEDULER_HEALTH_CHECK_THRESHOLD: 300
+    AIRFLOW__CORE__PARALLELISM: 2
+    AIRFLOW__CORE__DAGS_FOLDER: /app/src/batch_pipeline/dags
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: UTC
+    PYTHONPATH: /app/src:/app
+  user: '50000:0'
+  volumes:
+    - .:/app:ro
+    - ./artifacts:/app/artifacts
+    - airflow-logs:/opt/airflow/logs
+  depends_on:
+    app-init: {condition: service_completed_successfully}
+    postgres-meta: {condition: service_healthy}
+    postgres-oltp: {condition: service_healthy}
+    postgres-dwh: {condition: service_healthy}
+  networks: [hospital]
+services:
+  postgres-oltp:
+    <<: *db
+    environment:
+      POSTGRES_DB: hospital_oltp
+      POSTGRES_PASSWORD: ${OLTP_ADMIN_PASSWORD:?Create .env from .env.example}
+      TZ: UTC
+    ports: ['127.0.0.1:${OLTP_HOST_PORT:-56432}:5432']
+    shm_size: 256mb
+    volumes: [oltp-data:/var/lib/postgresql/data]
+  postgres-dwh:
+    <<: *db
+    environment:
+      POSTGRES_DB: hospital_dwh
+      POSTGRES_PASSWORD: ${DWH_ADMIN_PASSWORD:?Create .env from .env.example}
+      TZ: UTC
+    ports: ['127.0.0.1:${DWH_HOST_PORT:-56433}:5432']
+    shm_size: 256mb
+    volumes: [dwh-data:/var/lib/postgresql/data]
+  postgres-meta:
+    <<: *db
+
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${META_ADMIN_PASSWORD:?Create .env from .env.example}
+      AIRFLOW_META_PASSWORD: ${AIRFLOW_META_PASSWORD:?Create .env from .env.example}
+      METABASE_META_PASSWORD: ${METABASE_META_PASSWORD:?Create .env from .env.example}
+    volumes:
+      - meta-data:/var/lib/postgresql/data
+      - ./infrastructure/init-meta.sh:/docker-entrypoint-initdb.d/10-meta.sh:ro
+  app-init:
+
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.12.15-slim-bookworm}
+    env_file: .env
+    volumes:
+      - .:/app:ro
+      - ./artifacts:/app/artifacts
+      - producer-journal:/var/lib/hospital-producer
+    depends_on:
+      postgres-oltp: {condition: service_healthy}
+      postgres-dwh: {condition: service_healthy}
+    networks: [hospital]
+  kafka:
+
+    image: ${KAFKA_IMAGE:-apache/kafka:3.9.1}
+    restart: unless-stopped
+    environment:
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:-MkU3OEVBNTcwNTJENDM2Qk}
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:19092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:${KAFKA_HOST_PORT:-29092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    ports: ['127.0.0.1:${KAFKA_HOST_PORT:-29092}:19092']
+    volumes: [kafka-data:/var/lib/kafka/data]
+    healthcheck:
+      test: [CMD-SHELL, '/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null']
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    networks: [hospital]
+  consumer:
+
+    <<: *app
+    entrypoint: [python, -m, streaming.consumer]
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - .:/app:ro
+      - ./artifacts:/app/artifacts
+    depends_on:
+      kafka: {condition: service_healthy}
+      postgres-dwh: {condition: service_healthy}
+      postgres-oltp: {condition: service_healthy}
+      app-init: {condition: service_completed_successfully}
+      kafka-init: {condition: service_completed_successfully}
+    networks: [hospital]
+  booking:
+
+    <<: *app
+    entrypoint: [python, -m, booking.service]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      BOOKING_HOST_PORT: ${BOOKING_HOST_PORT:-28081}
+    ports: ['127.0.0.1:${BOOKING_HOST_PORT:-28081}:8080']
+    volumes:
+      - .:/app:ro
+      - booking-journal:/var/lib/hospital-booking
+    depends_on:
+      postgres-oltp: {condition: service_healthy}
+      postgres-dwh: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+      consumer: {condition: service_started}
+      app-init: {condition: service_completed_successfully}
+      kafka-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8080/health',timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks: [hospital]
+  airflow-init:
+    <<: *airflow
+    environment:
+      <<: *airflow-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_UI_PASSWORD:?Configure UI password}
+    command: version
+  airflow-api:
+    <<: *airflow
+    command: api-server
+    restart: unless-stopped
+    ports: ['127.0.0.1:${AIRFLOW_HOST_PORT:-28080}:8080']
+    depends_on:
+      app-init: {condition: service_completed_successfully}
+      airflow-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, curl, --fail, http://localhost:8080/api/v2/monitor/health]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+  airflow-scheduler:
+    <<: *airflow
+    command: scheduler
+    restart: unless-stopped
+    depends_on:
+      app-init: {condition: service_completed_successfully}
+      airflow-init: {condition: service_completed_successfully}
+      airflow-api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, --fail, http://localhost:8974/health]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+  airflow-dag-processor:
+    <<: *airflow
+    command: dag-processor
+    restart: unless-stopped
+    depends_on:
+      app-init: {condition: service_completed_successfully}
+      airflow-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD-SHELL, 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 20s
+      timeout: 20s
+      retries: 20
+  metabase:
+
+    image: ${METABASE_IMAGE:-metabase/metabase:v0.64.1}
+    restart: unless-stopped
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres-meta
+      MB_DB_PORT: 5432
+      MB_DB_DBNAME: metabase_app
+      MB_DB_USER: metabase_meta_owner
+      MB_DB_PASS: ${METABASE_META_PASSWORD}
+      JAVA_TIMEZONE: UTC
+    ports: ['127.0.0.1:${METABASE_HOST_PORT:-23000}:3000']
+    depends_on:
+      postgres-meta: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, --fail, http://localhost:3000/api/health]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+    networks: [hospital]
+  kafka-init:
+    <<: *app
+    command: [python, -m, operations.bootstrap, topics]
+    env_file: .env
+    volumes:
+      - .:/app:ro
+    depends_on:
+      kafka: {condition: service_healthy}
+    networks: [hospital]
+  dashboard-init:
+    <<: *app
+    command: [python, -m, operations.bootstrap, dashboards]
+    env_file: .env
+    volumes:
+      - .:/app:ro
+      - ./artifacts:/app/artifacts
+    depends_on:
+      app-init: {condition: service_completed_successfully}
+      metabase: {condition: service_healthy}
+    networks: [hospital]
+volumes:
+  oltp-data:
+  dwh-data:
+  meta-data:
+  kafka-data:
+  airflow-logs:
+  producer-journal:
+  booking-journal:
+networks:
+  hospital:

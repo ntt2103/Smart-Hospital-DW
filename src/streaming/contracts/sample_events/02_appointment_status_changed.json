@@ -1,0 +1,20 @@
+{
+  "event_id": "10000000-0000-4000-8000-000000000002",
+  "event_type": "status_changed",
+  "entity_id": 1001,
+  "schema_version": "1.0.0",
+  "event_time": "2026-10-22T01:00:00Z",
+  "published_at": "2026-10-22T01:00:02Z",
+  "source_system": "hospital_simulator",
+  "payload": {
+    "appointment_id": 1001,
+    "doctor_id": 1,
+    "patient_id": 1,
+    "department_id": 1,
+    "scheduled_at": "2026-10-22T01:00:00Z",
+    "status": "ATTENDED",
+    "rescheduled_from_appointment_id": null,
+    "status_changed_at": "2026-10-22T01:00:00Z",
+    "previous_status": "SCHEDULED"
+  }
+}

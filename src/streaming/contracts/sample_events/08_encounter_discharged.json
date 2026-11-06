@@ -1,0 +1,20 @@
+{
+  "event_id": "10000000-0000-4000-8000-000000000008",
+  "event_type": "discharged",
+  "entity_id": 2002,
+  "schema_version": "1.0.0",
+  "event_time": "2026-10-24T14:00:00Z",
+  "published_at": "2026-10-24T14:00:02Z",
+  "source_system": "hospital_simulator",
+  "payload": {
+    "encounter_id": 2002,
+    "doctor_id": 1,
+    "patient_id": 1,
+    "department_id": 1,
+    "encounter_type": "INPATIENT",
+    "appointment_id": null,
+    "parent_encounter_id": 2001,
+    "admitted_at": "2026-10-22T02:00:00Z",
+    "discharged_at": "2026-10-24T14:00:00Z"
+  }
+}

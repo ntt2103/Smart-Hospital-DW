@@ -1,0 +1,160 @@
+erDiagram
+    %% Phase 5: 10 core source tables plus 3 diagnosis/association tables.
+    %% Base workload: average 6000 total OP/IP encounters per local day for 180 days.
+    patients {
+        BIGINT patient_id PK
+        VARCHAR patient_code UK
+        DATE date_of_birth
+        VARCHAR gender
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    departments {
+        BIGINT department_id PK
+        VARCHAR department_code UK
+        VARCHAR department_name
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    doctors {
+        BIGINT doctor_id PK
+        VARCHAR doctor_code UK
+        BIGINT department_id FK
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    appointments {
+        BIGINT appointment_id PK
+        BIGINT patient_id FK
+        BIGINT department_id FK
+        BIGINT doctor_id FK
+        TIMESTAMPTZ scheduled_at
+        VARCHAR status
+        TIMESTAMPTZ status_changed_at
+        BIGINT rescheduled_from_appointment_id FK,UK
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    encounters {
+        BIGINT encounter_id PK
+        BIGINT patient_id FK
+        BIGINT department_id FK
+        BIGINT doctor_id FK
+        BIGINT appointment_id FK,UK
+        BIGINT parent_encounter_id FK,UK
+        VARCHAR encounter_type
+        VARCHAR status
+        TIMESTAMPTZ status_changed_at
+        TIMESTAMPTZ checked_in_at
+        TIMESTAMPTZ consultation_started_at
+        TIMESTAMPTZ consultation_completed_at
+        TIMESTAMPTZ admitted_at
+        TIMESTAMPTZ discharged_at
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    beds {
+        BIGINT bed_id PK
+        BIGINT department_id FK
+        VARCHAR bed_code UK
+        VARCHAR bed_type
+        TIMESTAMPTZ commissioned_at
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    bed_status_history {
+        BIGINT bed_status_history_id PK
+        BIGINT bed_id FK
+        VARCHAR status
+        TIMESTAMPTZ effective_from
+        TIMESTAMPTZ effective_to
+        TEXT reason
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    bed_assignments {
+        BIGINT bed_assignment_id PK
+        BIGINT bed_id FK
+        BIGINT encounter_id FK
+        TIMESTAMPTZ assigned_at
+        TIMESTAMPTZ released_at
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    lab_test_types {
+        BIGINT lab_test_type_id PK
+        VARCHAR test_code UK
+        VARCHAR test_name
+        INTEGER default_tat_minutes
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    lab_orders {
+        BIGINT lab_order_id PK
+        BIGINT encounter_id FK
+        BIGINT department_id FK
+        BIGINT lab_test_type_id FK
+        VARCHAR status
+        TIMESTAMPTZ status_changed_at
+        TIMESTAMPTZ ordered_at
+        TIMESTAMPTZ collected_at
+        TIMESTAMPTZ processing_started_at
+        TIMESTAMPTZ result_completed_at
+        INTEGER target_tat_minutes_at_order
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    diagnoses {
+        BIGINT diagnosis_id PK
+        VARCHAR diagnosis_code UK "Synthetic stable code, not ICD"
+        VARCHAR diagnosis_name
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    encounter_doctors {
+        BIGINT association_id PK
+        BIGINT encounter_id FK
+        BIGINT doctor_id FK
+        VARCHAR role "PRIMARY or CONSULTING"
+        TIMESTAMPTZ joined_at
+        TIMESTAMPTZ left_at
+        BOOLEAN is_active "Void preserves audit identity"
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    encounter_diagnoses {
+        BIGINT association_id PK
+        BIGINT encounter_id FK
+        BIGINT diagnosis_id FK
+        BOOLEAN is_primary
+        TIMESTAMPTZ recorded_at
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    patients ||--o{ appointments : books
+    patients ||--o{ encounters : receives
+    departments ||--o{ doctors : current_department
+    departments ||--o{ appointments : owns
+    departments ||--o{ encounters : owns
+    departments ||--o{ beds : contains
+    departments ||--o{ lab_orders : requests
+    doctors o|--o{ appointments : assigned
+    doctors o|--o{ encounters : treats
+    appointments o|--o| encounters : OP_only
+    appointments o|--o| appointments : replacement
+    encounters o|--o| encounters : OP_to_IP
+    beds ||--|{ bed_status_history : history
+    beds ||--o{ bed_assignments : allocated
+    encounters ||--o{ bed_assignments : IP_only
+    encounters ||--o{ lab_orders : orders
+    lab_test_types ||--o{ lab_orders : classifies
+    encounters ||--o{ encounter_doctors : participations
+    doctors ||--o{ encounter_doctors : same_or_other_department
+    encounters ||--o{ encounter_diagnoses : recorded_diagnoses
+    diagnoses ||--o{ encounter_diagnoses : classifies

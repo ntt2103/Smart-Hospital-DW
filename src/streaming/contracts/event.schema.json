@@ -1,0 +1,1192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smart-hospital.invalid/contracts/event/1.0.0",
+  "title": "Hospital simulator event envelope v1.0.0",
+  "description": "Only producer envelope. Kafka topic/partition/offset and ingested_at are consumer metadata, not JSON fields. Runtime validates topic/key, ID equality, transition and temporal invariants after schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "entity_id",
+    "schema_version",
+    "event_time",
+    "published_at",
+    "source_system",
+    "payload"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "event_type": {
+      "enum": [
+        "created",
+        "status_changed",
+        "checked_in",
+        "consultation_started",
+        "admitted",
+        "bed_assigned",
+        "bed_released",
+        "discharged",
+        "order_created",
+        "sample_collected",
+        "processing_started",
+        "result_completed",
+        "cancelled"
+      ]
+    },
+    "entity_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "event_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "source_system": {
+      "const": "hospital_simulator"
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "event_type": {
+          "const": "created"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "appointment_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scheduled_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "status": {
+              "const": "SCHEDULED"
+            },
+            "rescheduled_from_appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "status_changed_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "appointment_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "scheduled_at",
+            "status",
+            "rescheduled_from_appointment_id",
+            "status_changed_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "status_changed"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "appointment_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scheduled_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "status": {
+              "enum": [
+                "SCHEDULED",
+                "ATTENDED",
+                "NO_SHOW",
+                "CANCELLED",
+                "RESCHEDULED"
+              ]
+            },
+            "rescheduled_from_appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "status_changed_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "previous_status": {
+              "enum": [
+                "SCHEDULED",
+                "ATTENDED",
+                "NO_SHOW",
+                "CANCELLED",
+                "RESCHEDULED"
+              ]
+            }
+          },
+          "required": [
+            "appointment_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "scheduled_at",
+            "status",
+            "rescheduled_from_appointment_id",
+            "status_changed_at",
+            "previous_status"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "checked_in"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "encounter_type": {
+              "const": "OUTPATIENT"
+            },
+            "appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "parent_encounter_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "checked_in_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "encounter_type",
+            "appointment_id",
+            "parent_encounter_id",
+            "checked_in_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "consultation_started"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "encounter_type": {
+              "const": "OUTPATIENT"
+            },
+            "appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "parent_encounter_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "checked_in_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "consultation_started_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "encounter_type",
+            "appointment_id",
+            "parent_encounter_id",
+            "checked_in_at",
+            "consultation_started_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "admitted"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "encounter_type": {
+              "const": "INPATIENT"
+            },
+            "appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "parent_encounter_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "admitted_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "encounter_type",
+            "appointment_id",
+            "parent_encounter_id",
+            "admitted_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "bed_assigned"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "encounter_type": {
+              "const": "INPATIENT"
+            },
+            "appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "parent_encounter_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "bed_assignment_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "bed_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "assigned_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "released_at": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "encounter_type",
+            "appointment_id",
+            "parent_encounter_id",
+            "bed_assignment_id",
+            "bed_id",
+            "assigned_at",
+            "released_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "bed_released"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "encounter_type": {
+              "const": "INPATIENT"
+            },
+            "appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "parent_encounter_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "bed_assignment_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "bed_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "assigned_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "released_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "encounter_type",
+            "appointment_id",
+            "parent_encounter_id",
+            "bed_assignment_id",
+            "bed_id",
+            "assigned_at",
+            "released_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "discharged"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "doctor_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "encounter_type": {
+              "const": "INPATIENT"
+            },
+            "appointment_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "parent_encounter_id": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "admitted_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "discharged_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "doctor_id",
+            "encounter_type",
+            "appointment_id",
+            "parent_encounter_id",
+            "admitted_at",
+            "discharged_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "order_created"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lab_order_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "lab_test_type_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "target_tat_minutes_at_order": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ordered_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "status": {
+              "const": "ORDERED"
+            }
+          },
+          "required": [
+            "lab_order_id",
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "lab_test_type_id",
+            "target_tat_minutes_at_order",
+            "ordered_at",
+            "status"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "sample_collected"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lab_order_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "lab_test_type_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "target_tat_minutes_at_order": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ordered_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "status": {
+              "const": "COLLECTED"
+            },
+            "collected_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "lab_order_id",
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "lab_test_type_id",
+            "target_tat_minutes_at_order",
+            "ordered_at",
+            "status",
+            "collected_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "processing_started"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lab_order_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "lab_test_type_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "target_tat_minutes_at_order": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ordered_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "status": {
+              "const": "PROCESSING"
+            },
+            "collected_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "processing_started_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "lab_order_id",
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "lab_test_type_id",
+            "target_tat_minutes_at_order",
+            "ordered_at",
+            "status",
+            "collected_at",
+            "processing_started_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "result_completed"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lab_order_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "lab_test_type_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "target_tat_minutes_at_order": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ordered_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "status": {
+              "const": "COMPLETED"
+            },
+            "collected_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "processing_started_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "result_completed_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "lab_order_id",
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "lab_test_type_id",
+            "target_tat_minutes_at_order",
+            "ordered_at",
+            "status",
+            "collected_at",
+            "processing_started_at",
+            "result_completed_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    },
+    {
+      "properties": {
+        "event_type": {
+          "const": "cancelled"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lab_order_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "encounter_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "patient_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "department_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "lab_test_type_id": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "target_tat_minutes_at_order": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ordered_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            },
+            "status": {
+              "const": "CANCELLED"
+            },
+            "collected_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "processing_started_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "status_changed_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+            }
+          },
+          "required": [
+            "lab_order_id",
+            "encounter_id",
+            "patient_id",
+            "department_id",
+            "lab_test_type_id",
+            "target_tat_minutes_at_order",
+            "ordered_at",
+            "status",
+            "collected_at",
+            "processing_started_at",
+            "status_changed_at"
+          ]
+        }
+      },
+      "required": [
+        "event_type",
+        "payload"
+      ]
+    }
+  ]
+}

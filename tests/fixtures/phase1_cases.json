@@ -1,0 +1,965 @@
+{
+    "version":  1,
+    "description":  "Phase 1 standalone logical fixtures. Shared base supplies reference entities; each case overrides table arrays. Small deliberate invalid records are not clean generator output. Timestamps UTC; reporting zone Asia/Ho_Chi_Minh. KPI oracle is independent from PostgreSQL draft SQL.",
+    "defaults":  {
+                     "as_of":  "2026-01-05T00:00:00Z",
+                     "snapshot_at":  "2026-01-01T17:00:00Z"
+                 },
+    "base":  {
+                 "patients":  [
+                                  {
+                                      "patient_id":  1
+                                  },
+                                  {
+                                      "patient_id":  2
+                                  }
+                              ],
+                 "departments":  [
+                                     {
+                                         "department_id":  1
+                                     },
+                                     {
+                                         "department_id":  2
+                                     }
+                                 ],
+                 "doctors":  [
+                                 {
+                                     "doctor_id":  1,
+                                     "department_id":  1
+                                 }
+                             ],
+                 "lab_test_types":  [
+                                        {
+                                            "lab_test_type_id":  1,
+                                            "default_tat_minutes":  30
+                                        }
+                                    ]
+             },
+    "cases":  [
+                  {
+                      "id":  "walk_in",
+                      "rules":  [
+                                    "DQ03_STATE"
+                                ],
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T01:00:00Z",
+                                                           "consultation_started_at":  "2026-01-01T01:25:00Z",
+                                                           "appointment_id":  null
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "OP01":  1,
+                                       "OP02":  25,
+                                       "OP03":  null
+                                   }
+                  },
+                  {
+                      "id":  "no_show",
+                      "input":  {
+                                    "appointments":  [
+                                                         {
+                                                             "appointment_id":  1,
+                                                             "patient_id":  1,
+                                                             "department_id":  1,
+                                                             "scheduled_at":  "2026-01-01T01:00:00Z",
+                                                             "status":  "ATTENDED",
+                                                             "status_changed_at":  "2026-01-02T02:00:00Z"
+                                                         },
+                                                         {
+                                                             "appointment_id":  2,
+                                                             "patient_id":  1,
+                                                             "department_id":  1,
+                                                             "scheduled_at":  "2026-01-01T01:00:00Z",
+                                                             "status":  "NO_SHOW",
+                                                             "status_changed_at":  "2026-01-02T02:00:00Z"
+                                                         },
+                                                         {
+                                                             "appointment_id":  3,
+                                                             "patient_id":  1,
+                                                             "department_id":  1,
+                                                             "scheduled_at":  "2026-01-01T01:00:00Z",
+                                                             "status":  "CANCELLED",
+                                                             "status_changed_at":  "2026-01-02T02:00:00Z"
+                                                         },
+                                                         {
+                                                             "appointment_id":  4,
+                                                             "patient_id":  1,
+                                                             "department_id":  1,
+                                                             "scheduled_at":  "2026-01-01T01:00:00Z",
+                                                             "status":  "RESCHEDULED",
+                                                             "status_changed_at":  "2026-01-02T02:00:00Z"
+                                                         }
+                                                     ]
+                                },
+                      "expected":  {
+                                       "OP03":  50
+                                   }
+                  },
+                  {
+                      "id":  "op_to_ip",
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T01:00:00Z",
+                                                           "consultation_started_at":  "2026-01-01T01:25:00Z"
+                                                       },
+                                                       {
+                                                           "encounter_id":  2,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "INPATIENT",
+                                                           "status":  "DISCHARGED",
+                                                           "admitted_at":  "2026-01-01T03:00:00Z",
+                                                           "discharged_at":  "2026-01-03T15:00:00Z",
+                                                           "parent_encounter_id":  1
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "OP01":  1,
+                                       "IP01":  1,
+                                       "IP03":  2.5
+                                   }
+                  },
+                  {
+                      "id":  "waiting_time",
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T01:00:00Z",
+                                                           "consultation_started_at":  "2026-01-01T01:25:00Z"
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "OP02":  25
+                                   }
+                  },
+                  {
+                      "id":  "occupancy",
+                      "snapshot_at":  "2026-01-01T17:00:00Z",
+                      "input":  {
+                                    "beds":  [
+                                                 {
+                                                     "bed_id":  1,
+                                                     "department_id":  1,
+                                                     "commissioned_at":  "2025-01-01T00:00:00Z"
+                                                 },
+                                                 {
+                                                     "bed_id":  2,
+                                                     "department_id":  1,
+                                                     "commissioned_at":  "2025-01-01T00:00:00Z"
+                                                 }
+                                             ],
+                                    "bed_status_history":  [
+                                                               {
+                                                                   "bed_status_history_id":  1,
+                                                                   "bed_id":  1,
+                                                                   "status":  "ACTIVE",
+                                                                   "effective_from":  "2025-01-01T00:00:00Z",
+                                                                   "effective_to":  null
+                                                               },
+                                                               {
+                                                                   "bed_status_history_id":  2,
+                                                                   "bed_id":  2,
+                                                                   "status":  "MAINTENANCE",
+                                                                   "effective_from":  "2025-01-01T00:00:00Z",
+                                                                   "effective_to":  null
+                                                               }
+                                                           ],
+                                    "bed_assignments":  [
+                                                            {
+                                                                "bed_assignment_id":  1,
+                                                                "bed_id":  1,
+                                                                "encounter_id":  1,
+                                                                "assigned_at":  "2026-01-01T12:00:00Z",
+                                                                "released_at":  "2026-01-02T03:00:00Z"
+                                                            }
+                                                        ]
+                                },
+                      "expected":  {
+                                       "IP02":  100
+                                   }
+                  },
+                  {
+                      "id":  "length_of_stay",
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "INPATIENT",
+                                                           "status":  "DISCHARGED",
+                                                           "admitted_at":  "2026-01-01T03:00:00Z",
+                                                           "discharged_at":  "2026-01-03T15:00:00Z"
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "IP01":  1,
+                                       "IP03":  2.5
+                                   }
+                  },
+                  {
+                      "id":  "lab_tat",
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T00:30:00Z",
+                                                           "consultation_started_at":  "2026-01-01T00:55:00Z"
+                                                       }
+                                                   ],
+                                    "lab_orders":  [
+                                                       {
+                                                           "lab_order_id":  1,
+                                                           "encounter_id":  1,
+                                                           "department_id":  1,
+                                                           "lab_test_type_id":  1,
+                                                           "status":  "COMPLETED",
+                                                           "ordered_at":  "2026-01-01T01:00:00Z",
+                                                           "result_completed_at":  "2026-01-01T01:45:00Z",
+                                                           "target_tat_minutes_at_order":  60
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "LAB01":  1,
+                                       "LAB02":  45,
+                                       "LAB03":  100
+                                   }
+                  },
+                  {
+                      "id":  "lab_ratio",
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T00:30:00Z",
+                                                           "consultation_started_at":  "2026-01-01T00:55:00Z"
+                                                       }
+                                                   ],
+                                    "lab_orders":  [
+                                                       {
+                                                           "lab_order_id":  1,
+                                                           "encounter_id":  1,
+                                                           "department_id":  1,
+                                                           "lab_test_type_id":  1,
+                                                           "status":  "COMPLETED",
+                                                           "ordered_at":  "2026-01-01T01:00:00Z",
+                                                           "result_completed_at":  "2026-01-01T01:45:00Z",
+                                                           "target_tat_minutes_at_order":  60
+                                                       },
+                                                       {
+                                                           "lab_order_id":  2,
+                                                           "encounter_id":  1,
+                                                           "department_id":  1,
+                                                           "lab_test_type_id":  1,
+                                                           "status":  "COMPLETED",
+                                                           "ordered_at":  "2026-01-01T01:00:00Z",
+                                                           "result_completed_at":  "2026-01-01T02:30:00Z",
+                                                           "target_tat_minutes_at_order":  60
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "LAB01":  2,
+                                       "LAB02":  67.5,
+                                       "LAB03":  50
+                                   }
+                  },
+                  {
+                      "id":  "duplicate_event",
+                      "as_of":  "2026-01-01T03:00:00Z",
+                      "input":  {
+                                    "events":  [
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000001",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:55:00Z",
+                                                       "published_at":  "2026-01-01T02:55:00Z",
+                                                       "ingested_at":  "2026-01-01T02:55:00Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000001",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:55:00Z",
+                                                       "published_at":  "2026-01-01T02:55:00Z",
+                                                       "ingested_at":  "2026-01-01T02:55:00Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000002",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:56:00Z",
+                                                       "published_at":  "2026-01-01T02:56:00Z",
+                                                       "ingested_at":  "2026-01-01T02:56:00Z"
+                                                   }
+                                               ]
+                                },
+                      "expected":  {
+                                       "canonical_events":  2,
+                                       "RT01":  1,
+                                       "RT02":  0,
+                                       "event_conflicts":  0
+                                   }
+                  },
+                  {
+                      "id":  "late_event",
+                      "as_of":  "2026-01-01T03:00:00Z",
+                      "input":  {
+                                    "events":  [
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000001",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:50:00Z",
+                                                       "published_at":  "2026-01-01T02:59:00Z",
+                                                       "ingested_at":  "2026-01-01T02:59:30Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000002",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  2,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:40:00Z",
+                                                       "published_at":  "2026-01-01T02:59:00Z",
+                                                       "ingested_at":  "2026-01-01T02:59:30Z"
+                                                   }
+                                               ]
+                                },
+                      "expected":  {
+                                       "canonical_events":  2,
+                                       "RT01":  1
+                                   }
+                  },
+                  {
+                      "id":  "window_boundaries",
+                      "as_of":  "2026-01-01T03:00:00Z",
+                      "input":  {
+                                    "events":  [
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000001",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:45:00Z",
+                                                       "published_at":  "2026-01-01T02:45:00Z",
+                                                       "ingested_at":  "2026-01-01T02:45:00Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000002",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  2,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T03:00:00Z",
+                                                       "published_at":  "2026-01-01T03:00:00Z",
+                                                       "ingested_at":  "2026-01-01T03:00:00Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000003",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  3,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T03:00:01Z",
+                                                       "published_at":  "2026-01-01T03:00:01Z",
+                                                       "ingested_at":  "2026-01-01T03:00:01Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000004",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  4,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:59:00Z",
+                                                       "published_at":  "2026-01-01T02:59:00Z",
+                                                       "ingested_at":  "2026-01-01T03:00:01Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000005",
+                                                       "event_type":  "result_completed",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:59:00Z",
+                                                       "published_at":  "2026-01-01T02:59:00Z",
+                                                       "ingested_at":  "2026-01-01T02:59:00Z"
+                                                   }
+                                               ]
+                                },
+                      "expected":  {
+                                       "RT01":  1,
+                                       "RT02":  1
+                                   }
+                  },
+                  {
+                      "id":  "window_expiry_idle",
+                      "as_of":  "2026-01-01T03:20:00Z",
+                      "input":  {
+                                    "events":  [
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000001",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:55:00Z",
+                                                       "published_at":  "2026-01-01T02:55:00Z",
+                                                       "ingested_at":  "2026-01-01T02:55:00Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000002",
+                                                       "event_type":  "result_completed",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:56:00Z",
+                                                       "published_at":  "2026-01-01T02:56:00Z",
+                                                       "ingested_at":  "2026-01-01T02:56:00Z"
+                                                   }
+                                               ]
+                                },
+                      "expected":  {
+                                       "RT01":  0,
+                                       "RT02":  0
+                                   }
+                  },
+                  {
+                      "id":  "zero_denominators",
+                      "snapshot_at":  "2026-01-01T17:00:00Z",
+                      "input":  {
+                                    "appointments":  [
+                                                         {
+                                                             "appointment_id":  1,
+                                                             "patient_id":  1,
+                                                             "department_id":  1,
+                                                             "scheduled_at":  "2026-01-01T01:00:00Z",
+                                                             "status":  "CANCELLED",
+                                                             "status_changed_at":  "2026-01-02T02:00:00Z"
+                                                         }
+                                                     ],
+                                    "beds":  [
+                                                 {
+                                                     "bed_id":  1,
+                                                     "department_id":  1,
+                                                     "commissioned_at":  "2025-01-01T00:00:00Z"
+                                                 },
+                                                 {
+                                                     "bed_id":  2,
+                                                     "department_id":  1,
+                                                     "commissioned_at":  "2025-01-01T00:00:00Z"
+                                                 }
+                                             ],
+                                    "bed_status_history":  [
+                                                               {
+                                                                   "bed_status_history_id":  1,
+                                                                   "bed_id":  1,
+                                                                   "status":  "MAINTENANCE",
+                                                                   "effective_from":  "2025-01-01T00:00:00Z",
+                                                                   "effective_to":  null
+                                                               },
+                                                               {
+                                                                   "bed_status_history_id":  2,
+                                                                   "bed_id":  2,
+                                                                   "status":  "INACTIVE",
+                                                                   "effective_from":  "2025-01-01T00:00:00Z",
+                                                                   "effective_to":  null
+                                                               }
+                                                           ],
+                                    "lab_orders":  [
+
+                                                   ]
+                                },
+                      "expected":  {
+                                       "OP03":  null,
+                                       "IP02":  null,
+                                       "LAB02":  null,
+                                       "LAB03":  null
+                                   }
+                  },
+                  {
+                      "id":  "invalid_timeline",
+                      "rules":  [
+                                    "DQ04_TIME"
+                                ],
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T01:30:00Z",
+                                                           "consultation_started_at":  "2026-01-01T01:25:00Z"
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "OP01":  1,
+                                       "OP02":  null,
+                                       "invalid_waiting":  1
+                                   }
+                  },
+                  {
+                      "id":  "bed_transfer",
+                      "input":  {
+                                    "bed_assignments":  [
+                                                            {
+                                                                "bed_assignment_id":  1,
+                                                                "bed_id":  1,
+                                                                "encounter_id":  1,
+                                                                "assigned_at":  "2026-01-01T01:00:00Z",
+                                                                "released_at":  "2026-01-01T03:00:00Z"
+                                                            },
+                                                            {
+                                                                "bed_assignment_id":  2,
+                                                                "bed_id":  2,
+                                                                "encounter_id":  1,
+                                                                "assigned_at":  "2026-01-01T03:00:00Z",
+                                                                "released_at":  "2026-01-01T07:00:00Z"
+                                                            }
+                                                        ]
+                                },
+                      "expected":  {
+                                       "bed_overlap_pairs":  0,
+                                       "encounter_overlap_pairs":  0
+                                   }
+                  },
+                  {
+                      "id":  "bed_overlap",
+                      "rules":  [
+                                    "DQ05_BED_OVERLAP"
+                                ],
+                      "input":  {
+                                    "bed_assignments":  [
+                                                            {
+                                                                "bed_assignment_id":  1,
+                                                                "bed_id":  1,
+                                                                "encounter_id":  1,
+                                                                "assigned_at":  "2026-01-01T01:00:00Z",
+                                                                "released_at":  "2026-01-01T04:00:00Z"
+                                                            },
+                                                            {
+                                                                "bed_assignment_id":  2,
+                                                                "bed_id":  1,
+                                                                "encounter_id":  2,
+                                                                "assigned_at":  "2026-01-01T03:00:00Z",
+                                                                "released_at":  "2026-01-01T07:00:00Z"
+                                                            }
+                                                        ]
+                                },
+                      "expected":  {
+                                       "bed_overlap_pairs":  1
+                                   }
+                  },
+                  {
+                      "id":  "encounter_overlap",
+                      "rules":  [
+                                    "DQ06_ENCOUNTER_OVERLAP"
+                                ],
+                      "input":  {
+                                    "bed_assignments":  [
+                                                            {
+                                                                "bed_assignment_id":  1,
+                                                                "bed_id":  1,
+                                                                "encounter_id":  1,
+                                                                "assigned_at":  "2026-01-01T01:00:00Z",
+                                                                "released_at":  "2026-01-01T04:00:00Z"
+                                                            },
+                                                            {
+                                                                "bed_assignment_id":  2,
+                                                                "bed_id":  2,
+                                                                "encounter_id":  1,
+                                                                "assigned_at":  "2026-01-01T03:00:00Z",
+                                                                "released_at":  "2026-01-01T07:00:00Z"
+                                                            }
+                                                        ]
+                                },
+                      "expected":  {
+                                       "encounter_overlap_pairs":  1
+                                   }
+                  },
+                  {
+                      "id":  "bed_status_overlap",
+                      "rules":  [
+                                    "DQ07_STATUS_CAPACITY"
+                                ],
+                      "input":  {
+                                    "bed_status_history":  [
+                                                               {
+                                                                   "bed_status_history_id":  1,
+                                                                   "bed_id":  1,
+                                                                   "status":  "ACTIVE",
+                                                                   "effective_from":  "2025-01-01T00:00:00Z",
+                                                                   "effective_to":  null
+                                                               },
+                                                               {
+                                                                   "bed_status_history_id":  3,
+                                                                   "bed_id":  1,
+                                                                   "status":  "MAINTENANCE",
+                                                                   "effective_from":  "2026-01-01T03:00:00Z",
+                                                                   "effective_to":  null
+                                                               }
+                                                           ]
+                                },
+                      "expected":  {
+                                       "status_overlap_pairs":  1
+                                   }
+                  },
+                  {
+                      "id":  "orphan_lab",
+                      "rules":  [
+                                    "DQ02_REFERENCE"
+                                ],
+                      "input":  {
+                                    "encounters":  [
+
+                                                   ],
+                                    "lab_orders":  [
+                                                       {
+                                                           "lab_order_id":  1,
+                                                           "encounter_id":  999,
+                                                           "department_id":  1,
+                                                           "lab_test_type_id":  1,
+                                                           "status":  "COMPLETED",
+                                                           "ordered_at":  "2026-01-01T01:00:00Z",
+                                                           "result_completed_at":  "2026-01-01T01:45:00Z",
+                                                           "target_tat_minutes_at_order":  60
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "orphan_lab_orders":  1
+                                   }
+                  },
+                  {
+                      "id":  "invalid_status",
+                      "rules":  [
+                                    "DQ03_STATE"
+                                ],
+                      "input":  {
+                                    "appointments":  [
+                                                         {
+                                                             "appointment_id":  1,
+                                                             "patient_id":  1,
+                                                             "department_id":  1,
+                                                             "scheduled_at":  "2026-01-01T01:00:00Z",
+                                                             "status":  "UNKNOWN",
+                                                             "status_changed_at":  "2026-01-02T02:00:00Z"
+                                                         }
+                                                     ]
+                                },
+                      "expected":  {
+                                       "invalid_appointment_status":  1,
+                                       "OP03":  null
+                                   }
+                  },
+                  {
+                      "id":  "batch_rerun",
+                      "input":  {
+                                    "revisions":  [
+                                                      {
+                                                          "source_pk":  1,
+                                                          "source_updated_at":  "2026-01-01T01:00:00Z",
+                                                          "value":  "SCHEDULED"
+                                                      },
+                                                      {
+                                                          "source_pk":  1,
+                                                          "source_updated_at":  "2026-01-01T02:00:00Z",
+                                                          "value":  "ATTENDED"
+                                                      },
+                                                      {
+                                                          "source_pk":  1,
+                                                          "source_updated_at":  "2026-01-01T02:00:00Z",
+                                                          "value":  "ATTENDED"
+                                                      }
+                                                  ]
+                                },
+                      "expected":  {
+                                       "business_rows":  1,
+                                       "final_values":  [
+                                                            "ATTENDED"
+                                                        ]
+                                   }
+                  },
+                  {
+                      "id":  "target_frozen",
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T00:30:00Z",
+                                                           "consultation_started_at":  "2026-01-01T00:55:00Z"
+                                                       }
+                                                   ],
+                                    "lab_test_types":  [
+                                                           {
+                                                               "lab_test_type_id":  1,
+                                                               "default_tat_minutes":  30
+                                                           }
+                                                       ],
+                                    "lab_orders":  [
+                                                       {
+                                                           "lab_order_id":  1,
+                                                           "encounter_id":  1,
+                                                           "department_id":  1,
+                                                           "lab_test_type_id":  1,
+                                                           "status":  "COMPLETED",
+                                                           "ordered_at":  "2026-01-01T01:00:00Z",
+                                                           "result_completed_at":  "2026-01-01T01:45:00Z",
+                                                           "target_tat_minutes_at_order":  60
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "LAB02":  45,
+                                       "LAB03":  100
+                                   }
+                  },
+                  {
+                      "id":  "local_date_role",
+                      "report_date":  "2026-01-02",
+                      "input":  {
+                                    "encounters":  [
+                                                       {
+                                                           "encounter_id":  1,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T16:30:00Z",
+                                                           "consultation_started_at":  "2026-01-01T16:55:00Z"
+                                                       },
+                                                       {
+                                                           "encounter_id":  2,
+                                                           "patient_id":  1,
+                                                           "department_id":  1,
+                                                           "encounter_type":  "OUTPATIENT",
+                                                           "status":  "COMPLETED",
+                                                           "checked_in_at":  "2026-01-01T16:40:00Z",
+                                                           "consultation_started_at":  "2026-01-01T17:05:00Z"
+                                                       }
+                                                   ]
+                                },
+                      "expected":  {
+                                       "OP01":  1,
+                                       "OP02":  25
+                                   }
+                  },
+                  {
+                      "id":  "conflicting_event",
+                      "rules":  [
+                                    "DQ01_KEY"
+                                ],
+                      "as_of":  "2026-01-01T03:00:00Z",
+                      "input":  {
+                                    "events":  [
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000001",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  1,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:55:00Z",
+                                                       "published_at":  "2026-01-01T02:55:00Z",
+                                                       "ingested_at":  "2026-01-01T02:55:00Z"
+                                                   },
+                                                   {
+                                                       "event_id":  "00000000-0000-4000-8000-000000000001",
+                                                       "event_type":  "checked_in",
+                                                       "entity_id":  2,
+                                                       "department_id":  1,
+                                                       "event_time":  "2026-01-01T02:55:00Z",
+                                                       "published_at":  "2026-01-01T02:55:00Z",
+                                                       "ingested_at":  "2026-01-01T02:55:00Z"
+                                                   }
+                                               ]
+                                },
+                      "expected":  {
+                                       "canonical_events":  1,
+                                       "event_conflicts":  1,
+                                       "RT01":  1
+                                   }
+                  },
+                  {
+                      "id":  "incremental_late_commit",
+                      "rules":  [
+                                    "DQ08_RECON_FRESH"
+                                ],
+                      "input":  {
+                                    "cursor":  {
+                                                   "updated_at":  "2026-01-01T02:00:00Z",
+                                                   "pk":  10,
+                                                   "lookback_minutes":  120,
+                                                   "upper":  "2026-01-01T03:00:00Z"
+                                               },
+                                    "committed_rows":  [
+                                                           {
+                                                               "source_pk":  1,
+                                                               "source_updated_at":  "2026-01-01T01:30:00Z"
+                                                           },
+                                                           {
+                                                               "source_pk":  11,
+                                                               "source_updated_at":  "2026-01-01T02:00:00Z"
+                                                           },
+                                                           {
+                                                               "source_pk":  12,
+                                                               "source_updated_at":  "2026-01-01T03:05:00Z"
+                                                           }
+                                                       ]
+                                },
+                      "expected":  {
+                                       "selected_keys":  [
+                                                             1,
+                                                             11
+                                                         ]
+                                   }
+                  },
+                  {
+                      "id":  "publish_failure",
+                      "rules":  [
+                                    "DQ08_RECON_FRESH"
+                                ],
+                      "input":  {
+                                    "journal_trace":  [
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "PREPARED"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "DB_COMMITTED"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "PUBLISH_FAILED"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "PUBLISHED"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "RAW_DURABLE"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "OFFSET_COMMITTED"
+                                                          }
+                                                      ]
+                                },
+                      "expected":  {
+                                       "unsafe_commits":  0,
+                                       "pending_publish_commands":  0
+                                   }
+                  },
+                  {
+                      "id":  "unsafe_offset",
+                      "input":  {
+                                    "journal_trace":  [
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "PREPARED"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "DB_COMMITTED"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "PUBLISHED"
+                                                          },
+                                                          {
+                                                              "command_id":  "cmd-1",
+                                                              "action":  "OFFSET_COMMITTED"
+                                                          }
+                                                      ]
+                                },
+                      "expected":  {
+                                       "unsafe_commits":  1
+                                   }
+                  },
+                  {
+                      "id":  "inactive_assignment",
+                      "rules":  [
+                                    "DQ07_STATUS_CAPACITY"
+                                ],
+                      "snapshot_at":  "2026-01-01T17:00:00Z",
+                      "input":  {
+                                    "beds":  [
+                                                 {
+                                                     "bed_id":  1,
+                                                     "department_id":  1,
+                                                     "commissioned_at":  "2025-01-01T00:00:00Z"
+                                                 },
+                                                 {
+                                                     "bed_id":  2,
+                                                     "department_id":  1,
+                                                     "commissioned_at":  "2025-01-01T00:00:00Z"
+                                                 }
+                                             ],
+                                    "bed_status_history":  [
+                                                               {
+                                                                   "bed_status_history_id":  1,
+                                                                   "bed_id":  1,
+                                                                   "status":  "ACTIVE",
+                                                                   "effective_from":  "2025-01-01T00:00:00Z",
+                                                                   "effective_to":  null
+                                                               },
+                                                               {
+                                                                   "bed_status_history_id":  2,
+                                                                   "bed_id":  2,
+                                                                   "status":  "MAINTENANCE",
+                                                                   "effective_from":  "2025-01-01T00:00:00Z",
+                                                                   "effective_to":  null
+                                                               }
+                                                           ],
+                                    "bed_assignments":  [
+                                                            {
+                                                                "bed_assignment_id":  1,
+                                                                "bed_id":  2,
+                                                                "encounter_id":  1,
+                                                                "assigned_at":  "2026-01-01T12:00:00Z",
+                                                                "released_at":  "2026-01-02T03:00:00Z"
+                                                            }
+                                                        ]
+                                },
+                      "expected":  {
+                                       "inactive_assignments_at_snapshot":  1
+                                   }
+                  }
+              ]
+}
